@@ -54,13 +54,13 @@ Build ShipCheck as a strict TypeScript monorepo that compiles delivery briefs in
 
 - [x] Task 9: Implement the schema-constrained compiler boundary with mock fixtures and one repair retry.
 - [x] Task 10: Implement normalization, deduplication, and allowed-intent enforcement.
-- [ ] Task 11: Implement the finite execution planner.
+- [x] Task 11: Implement the finite execution planner.
 
 ### Checkpoint: Requirement-to-Plan
 
-- [ ] Canonical briefs compile into expected atomic structures.
-- [ ] Subjective, ambiguous, and unsupported requirements never become executable checks.
-- [ ] Planner rejects unknown intents and unsafe parameters.
+- [x] Canonical briefs compile into expected atomic structures.
+- [x] Subjective, ambiguous, and unsupported requirements never become executable checks.
+- [x] Planner rejects unknown intents and unsafe parameters.
 
 ### Phase 4: Public-Web Adapter
 

@@ -27,12 +27,18 @@ The engine witnesses whether objective requirements are satisfied. Playwright is
     "semanticTarget": "waitlist form",
     "inputProfile": "SAFE_TEST_EMAIL",
     "successSignals": [
-      "confirmation text",
-      "successful same-origin response"
+      "VISIBLE_CONFIRMATION",
+      "SUCCESSFUL_SAME_ORIGIN_RESPONSE"
     ]
   }
 }
 ```
+
+The planner owns a strict, intent-discriminated parameter schema. Compiler or
+model output never supplies selectors, scripts, request URLs, or browser code.
+Check IDs are derived deterministically from the contract hash, requirement ID,
+and allowed intent. A contract whose executable count exceeds the quick-mode
+limit is rejected rather than partially executed.
 
 ## Supported checks
 
