@@ -259,6 +259,17 @@ export const EvidenceArtifactSchema = z
   })
   .strict();
 
+export const EVIDENCE_MANIFEST_SCHEMA_VERSION =
+  "shipcheck-evidence-manifest-v1.0.0" as const;
+
+export const EvidenceManifestSchema = z
+  .object({
+    schemaVersion: z.literal(EVIDENCE_MANIFEST_SCHEMA_VERSION),
+    artifacts: z.array(EvidenceArtifactSchema),
+    evidenceManifestHash: HexSha256Schema,
+  })
+  .strict();
+
 export const OverallVerdictSchema = z.enum([
   "ACCEPTED",
   "ACCEPTED_WITH_NOTES",
@@ -299,6 +310,7 @@ export const AcceptanceReceiptSchema = z
     compilerVersion: VersionSchema,
     executionPolicyVersion: VersionSchema,
     adapterVersion: VersionSchema,
+    evidenceManifestVersion: z.literal(EVIDENCE_MANIFEST_SCHEMA_VERSION),
     verdict: OverallVerdictSchema,
     summary: ReceiptSummarySchema,
     results: z.array(RequirementResultSchema),
@@ -387,6 +399,7 @@ export type CheckDefinition = z.infer<typeof CheckDefinitionSchema>;
 export type Observation = z.infer<typeof ObservationSchema>;
 export type RequirementResult = z.infer<typeof RequirementResultSchema>;
 export type EvidenceArtifact = z.infer<typeof EvidenceArtifactSchema>;
+export type EvidenceManifest = z.infer<typeof EvidenceManifestSchema>;
 export type AcceptanceReceipt = z.infer<typeof AcceptanceReceiptSchema>;
 export type AcceptancePolicy = z.infer<typeof AcceptancePolicySchema>;
 export type ExecutionStatus = z.infer<typeof ExecutionStatusSchema>;

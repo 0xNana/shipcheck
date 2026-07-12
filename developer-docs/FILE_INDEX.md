@@ -25,4 +25,5 @@
 - `prompts/requirement-compiler.system.md`
 - `schemas/acceptance-contract.schema.json`
 - `schemas/acceptance-receipt.schema.json`
+- `schemas/evidence-manifest.schema.json`
 - `schemas/verify-request.schema.json`

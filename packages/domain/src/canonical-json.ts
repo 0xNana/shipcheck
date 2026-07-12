@@ -96,5 +96,8 @@ export function hashEvidenceManifest(
     .map((artifact) => omitKeys(artifact, new Set(["storageUrl"])))
     .sort((left, right) => String(left.id).localeCompare(String(right.id)));
 
-  return sha256Canonical(immutableArtifacts);
+  return sha256Canonical({
+    schemaVersion: "shipcheck-evidence-manifest-v1.0.0",
+    artifacts: immutableArtifacts,
+  });
 }

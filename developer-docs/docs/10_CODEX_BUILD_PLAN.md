@@ -113,6 +113,8 @@ Implement:
 
 Implement object-store interface, hashes, receipt, and expiring evidence URLs.
 
+The manifest is versioned, sorted by evidence ID, and hashed without expiring signed URLs. Receipt construction receives the acceptance policy and normalized execution status, derives the verdict through `determineAcceptance`, validates all requirement/evidence references, derives summary counts, and then computes the receipt hash.
+
 ### 8 — API
 
 ```text

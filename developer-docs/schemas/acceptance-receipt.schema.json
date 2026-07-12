@@ -14,6 +14,7 @@
     "compilerVersion",
     "executionPolicyVersion",
     "adapterVersion",
+    "evidenceManifestVersion",
     "verdict",
     "summary",
     "results",
@@ -68,6 +69,9 @@
     "adapterVersion": {
       "type": "string",
       "minLength": 1
+    },
+    "evidenceManifestVersion": {
+      "const": "shipcheck-evidence-manifest-v1.0.0"
     },
     "verdict": {
       "enum": [

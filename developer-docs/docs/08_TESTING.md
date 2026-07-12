@@ -106,10 +106,12 @@ Requirement status: `UNSUPPORTED`.
 - Adding a required failure cannot improve verdict.
 - Removing evidence cannot convert `UNVERIFIED` to `PASS`.
 - Changing receipt body changes receipt hash.
+- Rotating an expiring evidence URL does not change the evidence-manifest or receipt hash.
 - Same contract and observations produce same verdict.
 - Execution error never becomes `FAIL` without contrary observation.
 - The first matching acceptance-policy precedence rule always wins.
 - A required subjective or unsupported requirement cannot yield `ACCEPTED`.
+- A caller-supplied verdict cannot override the deterministic policy result.
 
 ## Safety tests
 

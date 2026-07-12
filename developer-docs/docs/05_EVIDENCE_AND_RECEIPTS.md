@@ -36,6 +36,8 @@ type EvidenceType =
 }
 ```
 
+The manifest envelope conforms to `schemas/evidence-manifest.schema.json` and includes `schemaVersion: shipcheck-evidence-manifest-v1.0.0`, artifacts sorted by evidence ID, and `evidenceManifestHash`. Evidence IDs must be unique.
+
 ## Traceability
 
 ```text
@@ -93,6 +95,7 @@ Contains:
 - target;
 - target fingerprint;
 - compiler, policy, execution-policy, and adapter versions;
+- evidence-manifest schema version;
 - counts;
 - results;
 - overall verdict;
@@ -107,11 +110,13 @@ Use deterministic JSON canonicalization before SHA-256.
 
 ```text
 specificationHash = SHA256(canonical acceptance contract with contractHash omitted)
-evidenceManifestHash = SHA256(canonical artifact hashes and immutable metadata)
+evidenceManifestHash = SHA256(canonical manifest schema version plus artifact hashes and immutable metadata, with storageUrl omitted)
 receiptHash = SHA256(canonical receipt with receiptHash, signature, and anchor omitted)
 ```
 
 Do not hash expiring signed URLs. Hash bytes and immutable metadata.
+
+Receipt construction derives the verdict by invoking the versioned deterministic acceptance policy. A receipt builder must not accept a caller-supplied verdict.
 
 Canonical JSON recursively sorts object keys, preserves array order, rejects non-JSON values and non-finite numbers, and emits UTF-8 without insignificant whitespace. Evidence-manifest entries are sorted by evidence ID before hashing. Hash fields use lowercase hexadecimal SHA-256.
 
