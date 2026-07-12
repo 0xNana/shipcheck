@@ -170,7 +170,7 @@ export function planExecution(
   ) {
     throw new ExecutionPlanningError(
       "EXECUTION_LIMIT_EXCEEDED",
-      `Contract exceeds the executable requirement limit of ${policy.maxExecutableRequirementsQuick}`,
+      `Contract exceeds the executable requirement limit of ${String(policy.maxExecutableRequirementsQuick)}`,
     );
   }
 

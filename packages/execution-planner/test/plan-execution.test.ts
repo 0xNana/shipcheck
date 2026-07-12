@@ -93,7 +93,10 @@ describe("planExecution", () => {
     ];
 
     const plans = intents.map((intent, index) =>
-      planExecution(contract([executable(`req_${index}`, intent)]), policy),
+      planExecution(
+        contract([executable(`req_${String(index)}`, intent)]),
+        policy,
+      ),
     );
 
     expect(plans.map(({ checks }) => checks[0]?.intent)).toEqual(intents);
@@ -148,7 +151,7 @@ describe("planExecution", () => {
 
   it("rejects execution plans above the quick-mode limit", () => {
     const requirements = Array.from({ length: 9 }, (_, index) =>
-      executable(`req_${index}`, "HTTPS_ENABLED"),
+      executable(`req_${String(index)}`, "HTTPS_ENABLED"),
     );
 
     expect(() => planExecution(contract(requirements), policy)).toThrowError(
