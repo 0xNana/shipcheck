@@ -14,5 +14,12 @@
     "lint": "eslint src test",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@shipcheck/execution-planner": "workspace:*",
+    "playwright-core": "1.61.1"
+  },
+  "devDependencies": {
+    "@shipcheck/fixture-sites": "workspace:*"
   }
 }

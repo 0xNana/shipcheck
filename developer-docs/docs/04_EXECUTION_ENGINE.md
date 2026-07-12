@@ -15,6 +15,14 @@ The engine witnesses whether objective requirements are satisfied. Playwright is
 - no destructive actions
 - no arbitrary model-generated code
 
+The adapter launches Chromium with an explicit executable, creates a fresh
+non-persistent context for every run, blocks service workers, grants no
+permissions, and closes both context and browser in a `finally` boundary.
+Context-wide routing revalidates every request with the URL guard. Navigation,
+action, page, popup, redirect, download, and wall-clock budgets fail closed;
+timeouts and browser failures produce incomplete execution rather than a
+product contradiction.
+
 ## Planner output
 
 ```json
@@ -78,6 +86,10 @@ Blocked:
 - government or legal submissions.
 
 A form passes only with an observable success signal or successful same-origin response. No observable success state yields `UNVERIFIED`.
+
+The V1 executor submits only an email input with a fixed synthetic address.
+Forms containing blocked action language or password, file, or card-like
+inputs are not submitted and remain inconclusive.
 
 ### Responsive behavior
 

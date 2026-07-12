@@ -66,7 +66,7 @@ Build ShipCheck as a strict TypeScript monorepo that compiles delivery briefs in
 
 - [x] Task 12: Build controlled fixture sites for canonical and hostile scenarios.
 - [x] Task 13: Implement URL normalization, DNS/IP policy, and redirect validation.
-- [ ] Task 14: Implement isolated Playwright execution, budgets, and safe check executors.
+- [x] Task 14: Implement isolated Playwright execution, budgets, and safe check executors.
 - [ ] Task 15: Implement observation normalization, screenshots, failure traces, and cleanup.
 
 ### Checkpoint: Safe Execution

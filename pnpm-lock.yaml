@@ -59,7 +59,18 @@ importers:
         specifier: ^4.0.5
         version: 4.4.3
 
-  packages/public-web-adapter: {}
+  packages/public-web-adapter:
+    dependencies:
+      '@shipcheck/execution-planner':
+        specifier: workspace:*
+        version: link:../execution-planner
+      playwright-core:
+        specifier: 1.61.1
+        version: 1.61.1
+    devDependencies:
+      '@shipcheck/fixture-sites':
+        specifier: workspace:*
+        version: link:../../apps/fixture-sites
 
   packages/requirement-compiler:
     dependencies:
@@ -851,6 +862,11 @@ packages:
   picomatch@4.0.5:
     resolution: {integrity: sha512-RvwwcruNjI1ncT5xRakeyS9Lf8lcItv34KD+aif+VH9kduAyfYBipGh12274xtenIPZ119/R9BdTBa8gAwSh0A==}
     engines: {node: '>=12'}
+
+  playwright-core@1.61.1:
+    resolution: {integrity: sha512-h7Qlt6m4REp25qvIdvbDtVmD4LqVXfpRxhORv9L0jzETM05p4fuPJ3dKyuSXQxDSbXnmS79HAgi9589lGSpLkg==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   postcss@8.5.17:
     resolution: {integrity: sha512-J7EF+8X+CzRPaJPOv9Ck2wNWJvGnnl3PcNPAdGg6GTLjyVpyQ0yATMSXRFRV01BviT/9Gwuc3rjEyJbDJG9a4w==}
@@ -1738,6 +1754,8 @@ snapshots:
   picocolors@1.1.1: {}
 
   picomatch@4.0.5: {}
+
+  playwright-core@1.61.1: {}
 
   postcss@8.5.17:
     dependencies:

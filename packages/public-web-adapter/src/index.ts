@@ -12,3 +12,11 @@ export type {
   UrlPolicyErrorCode,
   ValidatedUrl,
 } from "./url-guard.js";
+export { createPublicWebWorker, PublicWebWorker } from "./worker.js";
+export type {
+  CheckExecutionResult,
+  PublicWebWorkerOptions,
+  WorkerBudgets,
+  WorkerExecutionResult,
+  WorkerRequest,
+} from "./worker.js";
