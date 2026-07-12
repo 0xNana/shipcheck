@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shipcheck.example/schemas/acceptance-receipt.schema.json",
+  "title": "ShipCheck Acceptance Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "receiptSchemaVersion",
+    "receiptId",
+    "contractHash",
+    "contractSchemaVersion",
+    "target",
+    "targetFingerprint",
+    "compilerVersion",
+    "executionPolicyVersion",
+    "adapterVersion",
+    "verdict",
+    "summary",
+    "results",
+    "evidenceManifestHash",
+    "policyVersion",
+    "testedAt",
+    "receiptHash"
+  ],
+  "properties": {
+    "receiptSchemaVersion": {
+      "const": "shipcheck-acceptance-receipt-v1.0.0"
+    },
+    "receiptId": {
+      "type": "string"
+    },
+    "contractHash": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9]{64}$"
+    },
+    "contractSchemaVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "target": {
+      "type": "string",
+      "format": "uri"
+    },
+    "targetFingerprint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["finalUrl", "sha256"],
+      "properties": {
+        "finalUrl": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "compilerVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "executionPolicyVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "adapterVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "verdict": {
+      "enum": [
+        "ACCEPTED",
+        "ACCEPTED_WITH_NOTES",
+        "CHANGES_REQUIRED",
+        "INSUFFICIENT_SPECIFICATION",
+        "EXECUTION_INCOMPLETE"
+      ]
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total",
+        "passed",
+        "failed",
+        "unverified",
+        "notObjectivelyTestable",
+        "unsupported"
+      ],
+      "properties": {
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "passed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unverified": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "notObjectivelyTestable": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unsupported": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "requirementId",
+          "priority",
+          "status",
+          "checkIds",
+          "observationIds",
+          "evidenceIds",
+          "rerunEligible"
+        ],
+        "properties": {
+          "requirementId": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "PASS",
+              "FAIL",
+              "UNVERIFIED",
+              "NOT_OBJECTIVELY_TESTABLE",
+              "UNSUPPORTED"
+            ]
+          },
+          "priority": {
+            "enum": [
+              "CRITICAL",
+              "REQUIRED",
+              "OPTIONAL"
+            ]
+          },
+          "checkIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "observationIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "evidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "repairHint": {
+            "type": "string"
+          },
+          "expected": {
+            "type": "string"
+          },
+          "observed": {
+            "type": "string"
+          },
+          "rerunEligible": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "evidenceManifestHash": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9]{64}$"
+    },
+    "policyVersion": {
+      "type": "string"
+    },
+    "testedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "receiptHash": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9]{64}$"
+    },
+    "anchor": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": ["network", "transactionHash"],
+      "properties": {
+        "network": {
+          "type": "string"
+        },
+        "transactionHash": {
+          "type": "string"
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "keyId", "value"],
+      "properties": {
+        "algorithm": { "type": "string" },
+        "keyId": { "type": "string" },
+        "value": { "type": "string" }
+      }
+    }
+  }
+}

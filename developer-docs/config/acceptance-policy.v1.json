@@ -1,0 +1,45 @@
+{
+  "policyVersion": "shipcheck-acceptance-v1.0.0",
+  "minimumExecutableRequiredForAcceptance": 1,
+  "precedence": [
+    {
+      "condition": "SYSTEMIC_EXECUTION_FAILURE",
+      "verdict": "EXECUTION_INCOMPLETE"
+    },
+    {
+      "condition": "NO_EXECUTABLE_REQUIREMENTS",
+      "verdict": "INSUFFICIENT_SPECIFICATION"
+    },
+    {
+      "condition": "ANY_CRITICAL_FAIL",
+      "verdict": "CHANGES_REQUIRED"
+    },
+    {
+      "condition": "ANY_REQUIRED_FAIL",
+      "verdict": "CHANGES_REQUIRED"
+    },
+    {
+      "condition": "ANY_CRITICAL_UNVERIFIED",
+      "verdict": "EXECUTION_INCOMPLETE"
+    },
+    {
+      "condition": "ANY_REQUIRED_UNVERIFIED",
+      "verdict": "ACCEPTED_WITH_NOTES"
+    },
+    {
+      "condition": "ANY_NON_PASS_RESULT",
+      "verdict": "ACCEPTED_WITH_NOTES"
+    },
+    {
+      "condition": "OTHERWISE",
+      "verdict": "ACCEPTED"
+    }
+  ],
+  "notes": [
+    "SUBJECTIVE requirements map to NOT_OBJECTIVELY_TESTABLE.",
+    "UNSUPPORTED requirements cannot pass.",
+    "The first matching precedence rule determines the verdict.",
+    "Required or critical NOT_OBJECTIVELY_TESTABLE and UNSUPPORTED results prevent unconditional acceptance.",
+    "The engine does not consume LLM prose."
+  ]
+}

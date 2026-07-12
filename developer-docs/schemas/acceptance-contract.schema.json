@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://shipcheck.example/schemas/acceptance-contract.schema.json",
+  "title": "ShipCheck Acceptance Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contractId",
+    "compilerVersion",
+    "policyVersion",
+    "executionPolicyVersion",
+    "target",
+    "requirements",
+    "createdAt",
+    "contractHash"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "shipcheck-acceptance-contract-v1.0.0"
+    },
+    "contractId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "compilerVersion": {
+      "type": "string"
+    },
+    "policyVersion": {
+      "type": "string"
+    },
+    "executionPolicyVersion": {
+      "type": "string"
+    },
+    "target": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "contractHash": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9]{64}$"
+    },
+    "requirements": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "statement",
+          "provenance",
+          "class",
+          "priority",
+          "prioritySource",
+          "confidence"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "statement": {
+            "type": "string",
+            "minLength": 1
+          },
+          "provenance": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["kind", "sourceText", "start", "end"],
+                "properties": {
+                  "kind": { "const": "BRIEF_SPAN" },
+                  "sourceText": { "type": "string", "minLength": 1 },
+                  "start": { "type": "integer", "minimum": 0 },
+                  "end": { "type": "integer", "minimum": 1 }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["kind", "rationale"],
+                "properties": {
+                  "kind": { "const": "DERIVED_BASELINE" },
+                  "rationale": { "type": "string", "minLength": 1 }
+                }
+              }
+            ]
+          },
+          "class": {
+            "enum": [
+              "EXECUTABLE",
+              "AMBIGUOUS",
+              "SUBJECTIVE",
+              "UNSUPPORTED"
+            ]
+          },
+          "priority": {
+            "enum": [
+              "CRITICAL",
+              "REQUIRED",
+              "OPTIONAL"
+            ]
+          },
+          "prioritySource": {
+            "enum": [
+              "EXPLICIT",
+              "INFERRED",
+              "DEFAULT"
+            ]
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "intent": {
+            "enum": [
+              "CONTENT_PRESENT",
+              "SECTION_PRESENT",
+              "LINK_RESOLVES",
+              "CTA_NAVIGATES",
+              "FORM_ACCEPTS_INPUT",
+              "NAVIGATION_WORKS",
+              "NO_HORIZONTAL_OVERFLOW",
+              "ASSETS_LOAD",
+              "NO_SEVERE_CONSOLE_ERRORS",
+              "NO_FAILED_SAME_ORIGIN_REQUESTS",
+              "HTTPS_ENABLED",
+              "METADATA_PRESENT",
+              "BASIC_ACCESSIBILITY"
+            ]
+          },
+          "clarification": {
+            "type": "string"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": { "class": { "const": "EXECUTABLE" } },
+              "required": ["class"]
+            },
+            "then": {
+              "required": ["intent"]
+            },
+            "else": {
+              "not": { "required": ["intent"] }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "provenance": {
+                  "properties": { "kind": { "const": "DERIVED_BASELINE" } },
+                  "required": ["kind"]
+                }
+              },
+              "required": ["provenance"]
+            },
+            "then": {
+              "properties": {
+                "priority": { "const": "OPTIONAL" },
+                "prioritySource": { "const": "DEFAULT" }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
