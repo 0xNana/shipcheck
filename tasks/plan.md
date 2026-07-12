@@ -64,7 +64,7 @@ Build ShipCheck as a strict TypeScript monorepo that compiles delivery briefs in
 
 ### Phase 4: Public-Web Adapter
 
-- [ ] Task 12: Build controlled fixture sites for canonical and hostile scenarios.
+- [x] Task 12: Build controlled fixture sites for canonical and hostile scenarios.
 - [ ] Task 13: Implement URL normalization, DNS/IP policy, and redirect validation.
 - [ ] Task 14: Implement isolated Playwright execution, budgets, and safe check executors.
 - [ ] Task 15: Implement observation normalization, screenshots, failure traces, and cleanup.
