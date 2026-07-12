@@ -61,3 +61,9 @@
 **Decision:** The pure acceptance function receives `COMPLETED` or `SYSTEMIC_FAILURE` as an explicit normalized orchestration input.
 
 **Reason:** A systemic worker failure cannot be inferred reliably from requirement results; an individual inconclusive check must remain distinct from failure of the run as a whole.
+
+## ADR-012 — Deterministic compiler envelope
+
+**Decision:** The model emits only schema-constrained requirement candidates. ShipCheck supplies target normalization, identifiers, versions, timestamps, and the contract hash.
+
+**Reason:** Model-generated provenance metadata or hashes would weaken reproducibility and allow untrusted output to control the acceptance envelope.

@@ -85,6 +85,8 @@ Implement:
 - normalization/deduplication;
 - allowed-intent enforcement.
 
+The provider-facing request includes the candidate JSON Schema for structured output. The model returns requirement candidates only; ShipCheck supplies and validates the immutable contract envelope and hash. Invalid schema or source provenance receives exactly one constrained repair request.
+
 Start with mocked compiler fixtures.
 
 ### 4 — Execution planner

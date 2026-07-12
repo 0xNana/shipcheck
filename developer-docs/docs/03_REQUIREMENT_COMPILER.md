@@ -47,6 +47,18 @@ The compiler does not decide whether a delivery passes. It defines what can be c
 }
 ```
 
+## Model boundary
+
+The model returns only a strict candidate envelope:
+
+```json
+{
+  "requirements": []
+}
+```
+
+The adapter supplies the generated JSON Schema for this envelope to providers that support structured output. The model does not provide the target, contract ID, schema/compiler/policy versions, creation time, contract hash, or verdict. ShipCheck validates candidate structure and exact source provenance, performs at most one constrained repair request containing validation issues, and then deterministically assembles and hashes the acceptance contract.
+
 ## Invariants
 
 1. Every requirement has exactly one provenance variant: a zero-based `[start, end)` `BRIEF_SPAN` whose `sourceText` exactly matches the brief slice, or a `DERIVED_BASELINE` rationale.
@@ -176,5 +188,5 @@ Compiler output must validate against `schemas/acceptance-contract.schema.json`.
 The compiler may propose no more than 12 total requirements. Quick execution later selects no more than 8 executable requirements; non-executable requirements remain visible in the contract and receipt.
 
 - First invalid output: one constrained repair retry.
-- Second invalid output: stop without browser execution.
+- Second invalid output: return `COMPILATION_FAILED` and stop without allocating a contract or starting browser execution.
 - No valid executable requirement: return `INSUFFICIENT_SPECIFICATION`.

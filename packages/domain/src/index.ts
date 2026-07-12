@@ -39,6 +39,7 @@ export type {
   AcceptanceReceipt,
   CheckDefinition,
   CheckId,
+  CheckIntent,
   ContractId,
   EvidenceArtifact,
   EvidenceId,

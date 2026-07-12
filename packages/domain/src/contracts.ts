@@ -386,6 +386,7 @@ export const AcceptancePolicySchema = z
 export type RequirementProvenance = z.infer<
   typeof RequirementProvenanceSchema
 >;
+export type CheckIntent = z.infer<typeof CheckIntentSchema>;
 export type ContractId = z.infer<typeof ContractIdSchema>;
 export type RequirementId = z.infer<typeof RequirementIdSchema>;
 export type CheckId = z.infer<typeof CheckIdSchema>;
