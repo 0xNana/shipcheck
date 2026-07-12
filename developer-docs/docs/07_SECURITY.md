@@ -21,6 +21,13 @@ Controls:
 - block IP literals unless explicitly supported;
 - block cloud metadata endpoints.
 
+The V1 production guard uses the WHATWG URL parser, permits only HTTPS on the
+default port, rejects URL credentials and all IP literals, and fails the whole
+destination when any DNS answer is blocked. Validation performs a fresh lookup
+for every request or redirect. A separate test-only guard accepts only explicit
+HTTP `127.0.0.1` or `::1` literals so controlled fixtures cannot weaken the
+production policy.
+
 ### Browser escape and worker compromise
 
 Controls:

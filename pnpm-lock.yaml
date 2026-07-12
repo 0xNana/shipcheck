@@ -59,6 +59,8 @@ importers:
         specifier: ^4.0.5
         version: 4.4.3
 
+  packages/public-web-adapter: {}
+
   packages/requirement-compiler:
     dependencies:
       '@shipcheck/domain':
