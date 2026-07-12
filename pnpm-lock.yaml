@@ -61,6 +61,12 @@ importers:
 
   packages/public-web-adapter:
     dependencies:
+      '@shipcheck/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@shipcheck/evidence-store':
+        specifier: workspace:*
+        version: link:../evidence-store
       '@shipcheck/execution-planner':
         specifier: workspace:*
         version: link:../execution-planner

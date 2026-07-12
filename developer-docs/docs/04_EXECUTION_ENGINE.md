@@ -135,6 +135,15 @@ Every failure should include:
 
 Pass evidence may be minimized to control cost.
 
+Raw executor outcomes are normalized into schema-valid observations with
+deterministic observation IDs and sorted, deduplicated evidence references.
+Contradictions and execution errors capture a full-page PNG when the page is
+available. Playwright tracing starts before navigation but is persisted only
+for configured `FAIL` or `EXECUTION_ERROR` outcomes. Trace files live in a
+per-run temporary directory, are read into the artifact sink, and are removed
+before the worker returns. Artifact IDs are content-addressed from SHA-256 of
+the immutable bytes; signed storage URLs remain mutable metadata.
+
 ## Observation model
 
 ```typescript

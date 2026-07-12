@@ -1,3 +1,9 @@
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+import type { EvidenceArtifact, Observation } from "@shipcheck/domain";
+import type { ArtifactSink } from "@shipcheck/evidence-store";
 import {
   ExecutionPolicySchema,
   PlannedCheckSchema,
@@ -13,6 +19,7 @@ import {
 } from "playwright-core";
 
 import type { UrlGuard } from "./url-guard.js";
+import { normalizeCheckResult } from "./observations.js";
 
 type CheckExecutionStatus =
   | "SATISFIED"
@@ -34,6 +41,9 @@ export interface WorkerExecutionResult {
   readonly blockedRequests: number;
   readonly contextClosed: boolean;
   readonly browserClosed: boolean;
+  readonly observations: readonly Observation[];
+  readonly artifacts: readonly EvidenceArtifact[];
+  readonly temporaryFilesCleaned: boolean;
 }
 
 export interface WorkerRequest {
@@ -52,6 +62,12 @@ export interface PublicWebWorkerOptions {
   readonly urlGuard: UrlGuard;
   readonly policy: ExecutionPolicy;
   readonly budgets?: Partial<WorkerBudgets>;
+}
+
+export interface EvidenceCaptureOptions {
+  readonly artifactSink: ArtifactSink;
+  readonly now: () => string;
+  readonly tempRoot?: string;
 }
 
 interface RunState {
@@ -465,14 +481,71 @@ export class PublicWebWorker {
     this.budgets = { ...defaultBudgets, ...options.budgets };
   }
 
-  async execute(request: WorkerRequest): Promise<WorkerExecutionResult> {
+  execute(request: WorkerRequest): Promise<WorkerExecutionResult> {
+    return this.executeInternal(request);
+  }
+
+  executeWithEvidence(
+    request: WorkerRequest,
+    capture: EvidenceCaptureOptions,
+  ): Promise<WorkerExecutionResult> {
+    return this.executeInternal(request, capture);
+  }
+
+  private async executeInternal(
+    request: WorkerRequest,
+    capture?: EvidenceCaptureOptions,
+  ): Promise<WorkerExecutionResult> {
     const checks = request.checks.map((check) =>
       PlannedCheckSchema.parse(check),
     );
     let browser: Browser | undefined;
     let context: BrowserContext | undefined;
+    let page: Page | undefined;
     let contextClosed = false;
     let browserClosed = false;
+    let temporaryFilesCleaned = true;
+    let tempDirectory: string | undefined;
+    let tracingStarted = false;
+    const artifacts = new Map<string, EvidenceArtifact>();
+    const evidenceByCheck = new Map<string, string[]>();
+    const observedAt = capture?.now();
+    const attachArtifact = async (
+      type: EvidenceArtifact["type"],
+      contentType: string,
+      bytes: Uint8Array,
+      checkIds: readonly string[],
+    ): Promise<void> => {
+      if (capture === undefined || observedAt === undefined) return;
+      const artifact = await capture.artifactSink.write({
+        type,
+        contentType,
+        bytes,
+        createdAt: observedAt,
+        redactionApplied: false,
+      });
+      artifacts.set(artifact.id, artifact);
+      for (const checkId of checkIds) {
+        const ids = evidenceByCheck.get(checkId) ?? [];
+        ids.push(artifact.id);
+        evidenceByCheck.set(checkId, ids);
+      }
+    };
+    const captureScreenshot = async (checkId: string): Promise<void> => {
+      if (
+        capture === undefined ||
+        page === undefined ||
+        page.isClosed()
+      ) {
+        return;
+      }
+      const bytes = await page.screenshot({
+        fullPage: true,
+        type: "png",
+        animations: "disabled",
+      });
+      await attachArtifact("SCREENSHOT", "image/png", bytes, [checkId]);
+    };
     const state: RunState = {
       blockedRequests: 0,
       popupAttempts: 0,
@@ -498,6 +571,18 @@ export class PublicWebWorker {
       context.setDefaultTimeout(this.budgets.actionTimeoutMs);
       context.setDefaultNavigationTimeout(this.budgets.navigationTimeoutMs);
       const guardedContext = context;
+      if (capture !== undefined) {
+        tempDirectory = await mkdtemp(
+          join(capture.tempRoot ?? tmpdir(), "shipcheck-run-"),
+        );
+        temporaryFilesCleaned = false;
+        await guardedContext.tracing.start({
+          screenshots: true,
+          snapshots: true,
+          sources: false,
+        });
+        tracingStarted = true;
+      }
 
       await guardedContext.route("**/*", async (route) => {
         const routedRequest = route.request();
@@ -548,8 +633,9 @@ export class PublicWebWorker {
         }
       });
 
-      const page = await guardedContext.newPage();
-      page.on("popup", (popup) => {
+      page = await guardedContext.newPage();
+      const activePage = page;
+      activePage.on("popup", (popup) => {
         state.popupAttempts += 1;
         if (
           state.popupAttempts > this.policy.maxPopups ||
@@ -558,14 +644,14 @@ export class PublicWebWorker {
           void popup.close();
         }
       });
-      page.on("download", (download) => {
+      activePage.on("download", (download) => {
         state.downloadAttempts += 1;
         void download.cancel();
       });
-      page.on("dialog", (dialog) => void dialog.dismiss());
+      activePage.on("dialog", (dialog) => void dialog.dismiss());
 
       const run = async (): Promise<readonly CheckExecutionResult[]> => {
-        const response = await page.goto(target.normalizedUrl, {
+        const response = await activePage.goto(target.normalizedUrl, {
           waitUntil: "load",
           timeout: this.budgets.navigationTimeoutMs,
         });
@@ -574,20 +660,26 @@ export class PublicWebWorker {
         }
         const checkResults: CheckExecutionResult[] = [];
         for (const check of checks) {
+          let checkResult: CheckExecutionResult;
           try {
-            checkResults.push(
-              await executeCheck(
-                check,
-                page,
-                guardedContext,
-                target.normalizedUrl,
-                this.policy,
-                this.budgets,
-                state,
-              ),
+            checkResult = await executeCheck(
+              check,
+              activePage,
+              guardedContext,
+              target.normalizedUrl,
+              this.policy,
+              this.budgets,
+              state,
             );
           } catch {
-            checkResults.push(executionError(check));
+            checkResult = executionError(check);
+          }
+          checkResults.push(checkResult);
+          if (
+            checkResult.status === "CONTRADICTED" ||
+            checkResult.status === "EXECUTION_ERROR"
+          ) {
+            await captureScreenshot(checkResult.checkId);
           }
         }
         return checkResults;
@@ -602,6 +694,48 @@ export class PublicWebWorker {
       results = checks.map(executionError);
       executionStatus = "INCOMPLETE";
     } finally {
+      if (capture !== undefined && page !== undefined && !page.isClosed()) {
+        for (const checkResult of results) {
+          if (
+            (checkResult.status === "CONTRADICTED" ||
+              checkResult.status === "EXECUTION_ERROR") &&
+            (evidenceByCheck.get(checkResult.checkId)?.length ?? 0) === 0
+          ) {
+            await captureScreenshot(checkResult.checkId).catch(() => {
+              executionStatus = "INCOMPLETE";
+            });
+          }
+        }
+      }
+      if (context !== undefined && tracingStarted) {
+        const traceCheckIds = results
+          .filter(
+            ({ status }) =>
+              (status === "CONTRADICTED" &&
+                this.policy.captureTraceOn.includes("FAIL")) ||
+              (status === "EXECUTION_ERROR" &&
+                this.policy.captureTraceOn.includes("EXECUTION_ERROR")),
+          )
+          .map(({ checkId }) => checkId);
+        try {
+          if (traceCheckIds.length > 0 && tempDirectory !== undefined) {
+            const tracePath = join(tempDirectory, "trace.zip");
+            await context.tracing.stop({ path: tracePath });
+            tracingStarted = false;
+            await attachArtifact(
+              "TRACE",
+              "application/zip",
+              await readFile(tracePath),
+              traceCheckIds,
+            );
+          } else {
+            await context.tracing.stop();
+            tracingStarted = false;
+          }
+        } catch {
+          executionStatus = "INCOMPLETE";
+        }
+      }
       if (context !== undefined) {
         await context
           .close({ reason: "ShipCheck run completed" })
@@ -612,14 +746,38 @@ export class PublicWebWorker {
         await browser.close().catch(() => undefined);
         browserClosed = true;
       }
+      if (tempDirectory !== undefined) {
+        temporaryFilesCleaned = await rm(tempDirectory, {
+          recursive: true,
+          force: true,
+        }).then(
+          () => true,
+          () => false,
+        );
+      }
     }
 
+    const observations =
+      observedAt === undefined
+        ? []
+        : results.map((checkResult) =>
+            normalizeCheckResult(
+              checkResult,
+              evidenceByCheck.get(checkResult.checkId) ?? [],
+              observedAt,
+            ),
+          );
     return {
       executionStatus,
       results,
       blockedRequests: state.blockedRequests,
       contextClosed,
       browserClosed,
+      observations,
+      artifacts: [...artifacts.values()].sort((left, right) =>
+        left.id.localeCompare(right.id),
+      ),
+      temporaryFilesCleaned,
     };
   }
 }

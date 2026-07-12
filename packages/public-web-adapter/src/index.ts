@@ -13,8 +13,10 @@ export type {
   ValidatedUrl,
 } from "./url-guard.js";
 export { createPublicWebWorker, PublicWebWorker } from "./worker.js";
+export { normalizeCheckResult } from "./observations.js";
 export type {
   CheckExecutionResult,
+  EvidenceCaptureOptions,
   PublicWebWorkerOptions,
   WorkerBudgets,
   WorkerExecutionResult,

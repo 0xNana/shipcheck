@@ -16,6 +16,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@shipcheck/domain": "workspace:*",
+    "@shipcheck/evidence-store": "workspace:*",
     "@shipcheck/execution-planner": "workspace:*",
     "playwright-core": "1.61.1"
   },
