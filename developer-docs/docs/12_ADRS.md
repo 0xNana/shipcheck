@@ -67,3 +67,9 @@
 **Decision:** The model emits only schema-constrained requirement candidates. ShipCheck supplies target normalization, identifiers, versions, timestamps, and the contract hash.
 
 **Reason:** Model-generated provenance metadata or hashes would weaken reproducibility and allow untrusted output to control the acceptance envelope.
+
+## ADR-013 — Conservative deterministic deduplication
+
+**Decision:** Deduplicate only candidates with equal normalized statements, classes, and executable intents. Resolve merged fields and final ordering through fixed locale-independent rules.
+
+**Reason:** Broader semantic similarity risks collapsing distinct obligations, while model-order-dependent merging would make contract hashes irreproducible.

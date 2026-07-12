@@ -237,6 +237,127 @@ describe("compileRequirements", () => {
     expect(model.requests[1]?.issues?.join(" ")).toMatch(/unique/i);
   });
 
+  it("applies maxRequirements after semantic duplicates are merged", async () => {
+    const model = new FixtureModel([
+      {
+        requirements: [
+          {
+            id: "req_z",
+            statement: "A pricing section is present.",
+            provenance: {
+              kind: "BRIEF_SPAN",
+              sourceText: "pricing",
+              start: 25,
+              end: 32,
+            },
+            class: "EXECUTABLE",
+            adapter: "PUBLIC_WEB",
+            priority: "REQUIRED",
+            prioritySource: "DEFAULT",
+            confidence: 0.9,
+            intent: "SECTION_PRESENT",
+          },
+          {
+            id: "req_a",
+            statement: "a  PRICING section is present!",
+            provenance: {
+              kind: "BRIEF_SPAN",
+              sourceText: "pricing",
+              start: 25,
+              end: 32,
+            },
+            class: "EXECUTABLE",
+            adapter: "PUBLIC_WEB",
+            priority: "REQUIRED",
+            prioritySource: "DEFAULT",
+            confidence: 0.95,
+            intent: "SECTION_PRESENT",
+          },
+        ],
+      },
+    ]);
+
+    const compiled = await compileRequirements(
+      { brief, deliveryUrl: "https://example.com", maxRequirements: 1 },
+      {
+        model,
+        compilerVersion: "compiler-v1",
+        policyVersion: "policy-v1",
+        executionPolicyVersion: "execution-v1",
+        createContractId: () => "contract_deduplicated",
+        now: () => "2026-07-12T10:00:00Z",
+      },
+    );
+
+    expect(compiled.requirements).toHaveLength(1);
+    expect(compiled.requirements[0]?.id).toBe("req_a");
+    expect(model.requests).toHaveLength(1);
+  });
+
+  it("produces the same contract hash for reordered model candidates", async () => {
+    const pricing = {
+      id: "req_pricing",
+      statement: "A pricing section is present.",
+      provenance: {
+        kind: "BRIEF_SPAN",
+        sourceText: "pricing",
+        start: 25,
+        end: 32,
+      },
+      class: "EXECUTABLE",
+      adapter: "PUBLIC_WEB",
+      priority: "REQUIRED",
+      prioritySource: "DEFAULT",
+      confidence: 0.9,
+      intent: "SECTION_PRESENT",
+    };
+    const launchPage = {
+      id: "req_launch",
+      statement: "A launch page is present.",
+      provenance: {
+        kind: "BRIEF_SPAN",
+        sourceText: "launch page",
+        start: 8,
+        end: 19,
+      },
+      class: "EXECUTABLE",
+      adapter: "PUBLIC_WEB",
+      priority: "REQUIRED",
+      prioritySource: "DEFAULT",
+      confidence: 0.9,
+      intent: "CONTENT_PRESENT",
+    };
+    const options = {
+      compilerVersion: "compiler-v1",
+      policyVersion: "policy-v1",
+      executionPolicyVersion: "execution-v1",
+      createContractId: () => "contract_stable",
+      now: () => "2026-07-12T10:00:00Z",
+    };
+
+    const first = await compileRequirements(
+      { brief, deliveryUrl: "https://example.com" },
+      {
+        ...options,
+        model: new FixtureModel([
+          { requirements: [pricing, launchPage] },
+        ]),
+      },
+    );
+    const second = await compileRequirements(
+      { brief, deliveryUrl: "https://example.com" },
+      {
+        ...options,
+        model: new FixtureModel([
+          { requirements: [launchPage, pricing] },
+        ]),
+      },
+    );
+
+    expect(first.requirements).toEqual(second.requirements);
+    expect(first.contractHash).toBe(second.contractHash);
+  });
+
   it("stops after the second invalid response without creating a contract", async () => {
     const invalidOutput = {
       verdict: "ACCEPTED",

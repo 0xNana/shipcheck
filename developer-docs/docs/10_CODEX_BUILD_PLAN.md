@@ -87,6 +87,8 @@ Implement:
 
 The provider-facing request includes the candidate JSON Schema for structured output. The model returns requirement candidates only; ShipCheck supplies and validates the immutable contract envelope and hash. Invalid schema or source provenance receives exactly one constrained repair request.
 
+Normalization is deterministic and conservative: normalize Unicode/statement whitespace, preserve exact source spans, merge only equal normalized statement + class + intent keys, resolve priority/provenance conflicts by documented ordering, sort the output, then enforce `maxRequirements` and hash.
+
 Start with mocked compiler fixtures.
 
 ### 4 — Execution planner

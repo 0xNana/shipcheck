@@ -171,6 +171,20 @@ brief
 → acceptance contract
 ```
 
+## Deterministic normalization and deduplication
+
+Before enforcing the caller's `maxRequirements` and hashing the contract, ShipCheck:
+
+1. applies Unicode NFKC normalization and collapses whitespace in normalized statements and clarifications;
+2. preserves `BRIEF_SPAN.sourceText` and offsets exactly;
+3. groups candidates only when normalized statement, requirement class, and executable intent all match;
+4. never merges requirements with different classes or executable intents;
+5. selects the lexicographically smallest ID, strongest priority (`CRITICAL > REQUIRED > OPTIONAL`), strongest matching priority source (`EXPLICIT > INFERRED > DEFAULT`), and highest confidence;
+6. prefers the earliest exact brief span over a derived baseline for merged provenance;
+7. sorts final requirements by a locale-independent semantic key.
+
+These rules intentionally cover conservative textual equivalence, not open-ended semantic similarity.
+
 ## Ambiguity output
 
 ```json

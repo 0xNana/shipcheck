@@ -3,6 +3,7 @@ export {
   RequirementCompilationError,
 } from "./compile-requirements.js";
 export { buildCompilerPrompt } from "./prompt.js";
+export { normalizeAndDeduplicateRequirements } from "./normalize-requirements.js";
 export type {
   CompiledAcceptanceContract,
   CompilerModelRequest,

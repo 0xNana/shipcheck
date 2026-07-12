@@ -49,7 +49,7 @@
 - [x] Deterministic result aggregation and acceptance policy
 - [x] Evidence manifest and receipt construction
 - [x] Requirement compiler boundary and constrained repair
-- [ ] Requirement normalization and deduplication
+- [x] Requirement normalization and deduplication
 - [ ] Finite execution planner
 - [ ] Fixture sites and safe Playwright adapter
 - [ ] Storage, queue, API, and idempotency

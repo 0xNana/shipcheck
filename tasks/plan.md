@@ -53,7 +53,7 @@ Build ShipCheck as a strict TypeScript monorepo that compiles delivery briefs in
 ### Phase 3: Compilation and Planning
 
 - [x] Task 9: Implement the schema-constrained compiler boundary with mock fixtures and one repair retry.
-- [ ] Task 10: Implement normalization, deduplication, and allowed-intent enforcement.
+- [x] Task 10: Implement normalization, deduplication, and allowed-intent enforcement.
 - [ ] Task 11: Implement the finite execution planner.
 
 ### Checkpoint: Requirement-to-Plan

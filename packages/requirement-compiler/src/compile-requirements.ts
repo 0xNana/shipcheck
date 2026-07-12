@@ -9,6 +9,7 @@ import {
 import { z } from "zod";
 
 import { buildCompilerPrompt } from "./prompt.js";
+import { normalizeAndDeduplicateRequirements } from "./normalize-requirements.js";
 import type {
   CompiledAcceptanceContract,
   RequirementCompilerOptions,
@@ -61,9 +62,6 @@ function validateCompilerOutput(
   }
 
   const issues: string[] = [];
-  if (parsed.data.requirements.length > maxRequirements) {
-    issues.push("requirements: output exceeds maxRequirements");
-  }
   for (const requirement of parsed.data.requirements) {
     if (!validateRequirementProvenance(requirement.provenance, brief)) {
       issues.push(
@@ -72,9 +70,16 @@ function validateCompilerOutput(
     }
   }
 
+  const normalizedRequirements = normalizeAndDeduplicateRequirements(
+    parsed.data.requirements,
+  );
+  if (normalizedRequirements.length > maxRequirements) {
+    issues.push("requirements: normalized output exceeds maxRequirements");
+  }
+
   return issues.length > 0
     ? { success: false, issues }
-    : { success: true, requirements: parsed.data.requirements };
+    : { success: true, requirements: normalizedRequirements };
 }
 
 export class RequirementCompilationError extends Error {
