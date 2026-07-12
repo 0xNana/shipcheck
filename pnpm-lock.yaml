@@ -27,6 +27,12 @@ importers:
         specifier: ^3.2.4
         version: 3.2.7(@types/node@24.13.3)
 
+  packages/acceptance-policy:
+    dependencies:
+      '@shipcheck/domain':
+        specifier: workspace:*
+        version: link:../domain
+
   packages/domain:
     dependencies:
       zod:
