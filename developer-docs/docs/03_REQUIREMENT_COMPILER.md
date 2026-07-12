@@ -33,6 +33,7 @@ The compiler does not decide whether a delivery passes. It defines what can be c
         "end": 43
       },
       "class": "EXECUTABLE",
+      "adapter": "PUBLIC_WEB",
       "priority": "REQUIRED",
       "prioritySource": "DEFAULT",
       "observable": {
@@ -57,6 +58,7 @@ The compiler does not decide whether a delivery passes. It defines what can be c
 7. Confidence does not affect acceptance directly.
 8. A requirement without a supported safe adapter cannot be executable.
 9. Derived baselines are always `OPTIONAL` with `prioritySource: DEFAULT`.
+10. Executable requirements use the `PUBLIC_WEB` adapter in V1; non-executable requirements have no adapter or intent.
 
 ## Classes
 

@@ -31,7 +31,7 @@
     },
     "contractHash": {
       "type": "string",
-      "pattern": "^[a-fA-F0-9]{64}$"
+      "pattern": "^[a-f0-9]{64}$"
     },
     "contractSchemaVersion": {
       "type": "string",
@@ -185,7 +185,7 @@
     },
     "evidenceManifestHash": {
       "type": "string",
-      "pattern": "^[a-fA-F0-9]{64}$"
+      "pattern": "^[a-f0-9]{64}$"
     },
     "policyVersion": {
       "type": "string"
@@ -196,7 +196,7 @@
     },
     "receiptHash": {
       "type": "string",
-      "pattern": "^[a-fA-F0-9]{64}$"
+      "pattern": "^[a-f0-9]{64}$"
     },
     "anchor": {
       "type": [

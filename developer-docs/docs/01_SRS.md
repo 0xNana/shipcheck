@@ -50,8 +50,8 @@ Each requirement must contain:
 - class;
 - priority;
 - confidence;
-- expected observable;
-- proposed adapter;
+- allowed intent representing the expected observable;
+- `PUBLIC_WEB` adapter for executable V1 requirements;
 - clarification text where applicable.
 
 ### FR-004 — Requirement classes

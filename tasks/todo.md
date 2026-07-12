@@ -29,14 +29,14 @@
 
 **Acceptance criteria:**
 
-- [ ] Strict types cover requests, requirements, contracts, checks, observations, results, evidence, and receipts.
-- [ ] Invalid enums, provenance, cross-field variants, and unknown properties are rejected.
-- [ ] Canonical JSON and SHA-256 output are stable and exclude self-referential fields.
+- [x] Strict types cover requests, requirements, contracts, checks, observations, results, evidence, and receipts.
+- [x] Invalid enums, provenance, cross-field variants, and unknown properties are rejected.
+- [x] Canonical JSON and SHA-256 output are stable and exclude self-referential fields.
 
 **Verification:**
 
-- [ ] Tests fail before implementation and pass afterward.
-- [ ] `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build` pass.
+- [x] Tests fail before implementation and pass afterward.
+- [x] `pnpm test`, `pnpm typecheck`, `pnpm lint`, and `pnpm build` pass.
 
 **Dependencies:** Task 1
 

@@ -43,7 +43,7 @@
     },
     "contractHash": {
       "type": "string",
-      "pattern": "^[a-fA-F0-9]{64}$"
+      "pattern": "^[a-f0-9]{64}$"
     },
     "requirements": {
       "type": "array",
@@ -137,6 +137,9 @@
               "BASIC_ACCESSIBILITY"
             ]
           },
+          "adapter": {
+            "const": "PUBLIC_WEB"
+          },
           "clarification": {
             "type": "string"
           }
@@ -148,10 +151,16 @@
               "required": ["class"]
             },
             "then": {
-              "required": ["intent"]
+              "required": ["intent", "adapter"],
+              "properties": {
+                "adapter": { "const": "PUBLIC_WEB" }
+              }
             },
             "else": {
-              "not": { "required": ["intent"] }
+              "allOf": [
+                { "not": { "required": ["intent"] } },
+                { "not": { "required": ["adapter"] } }
+              ]
             }
           },
           {

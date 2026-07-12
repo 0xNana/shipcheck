@@ -28,15 +28,15 @@ Build ShipCheck as a strict TypeScript monorepo that compiles delivery briefs in
 
 ### Phase 1: Domain Foundation
 
-- [ ] Task 3: Bootstrap the pnpm TypeScript monorepo and `packages/domain`.
-- [ ] Task 4: Add schema-backed domain validators and branded identifiers.
-- [ ] Task 5: Add canonical JSON and SHA-256 helpers with golden tests.
+- [x] Task 3: Bootstrap the pnpm TypeScript monorepo and `packages/domain`.
+- [x] Task 4: Add schema-backed domain validators and branded identifiers.
+- [x] Task 5: Add canonical JSON and SHA-256 helpers with golden tests.
 
 ### Checkpoint: Foundation
 
-- [ ] Domain tests pass.
-- [ ] Type checking and linting pass.
-- [ ] Package build succeeds without browser, network, model, or database access.
+- [x] Domain tests pass.
+- [x] Type checking and linting pass.
+- [x] Package build succeeds without browser, network, model, or database access.
 
 ### Phase 2: Deterministic Acceptance
 

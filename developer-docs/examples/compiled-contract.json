@@ -17,6 +17,7 @@
         "end": 43
       },
       "class": "EXECUTABLE",
+      "adapter": "PUBLIC_WEB",
       "priority": "REQUIRED",
       "prioritySource": "DEFAULT",
       "confidence": 0.95,
