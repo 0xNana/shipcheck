@@ -267,6 +267,11 @@ export const OverallVerdictSchema = z.enum([
   "EXECUTION_INCOMPLETE",
 ]);
 
+export const ExecutionStatusSchema = z.enum([
+  "COMPLETED",
+  "SYSTEMIC_FAILURE",
+]);
+
 export const ReceiptSummarySchema = z
   .object({
     total: z.number().int().min(0),
@@ -347,7 +352,24 @@ export const AcceptancePolicySchema = z
       .min(1),
     notes: z.array(z.string()),
   })
-  .strict();
+  .strict()
+  .superRefine(({ precedence }, context) => {
+    const conditions = precedence.map(({ condition }) => condition);
+    if (new Set(conditions).size !== conditions.length) {
+      context.addIssue({
+        code: "custom",
+        message: "Acceptance policy conditions must be unique",
+        path: ["precedence"],
+      });
+    }
+    if (precedence.at(-1)?.condition !== "OTHERWISE") {
+      context.addIssue({
+        code: "custom",
+        message: "Acceptance policy must end with OTHERWISE",
+        path: ["precedence"],
+      });
+    }
+  });
 
 export type RequirementProvenance = z.infer<
   typeof RequirementProvenanceSchema
@@ -367,6 +389,8 @@ export type RequirementResult = z.infer<typeof RequirementResultSchema>;
 export type EvidenceArtifact = z.infer<typeof EvidenceArtifactSchema>;
 export type AcceptanceReceipt = z.infer<typeof AcceptanceReceiptSchema>;
 export type AcceptancePolicy = z.infer<typeof AcceptancePolicySchema>;
+export type ExecutionStatus = z.infer<typeof ExecutionStatusSchema>;
+export type OverallVerdict = z.infer<typeof OverallVerdictSchema>;
 
 export function validateRequirementProvenance(
   provenance: RequirementProvenance,

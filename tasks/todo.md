@@ -46,7 +46,7 @@
 
 ## Later Slices
 
-- [ ] Deterministic result aggregation and acceptance policy
+- [x] Deterministic result aggregation and acceptance policy
 - [ ] Evidence manifest and receipt construction
 - [ ] Requirement compiler boundary and normalization
 - [ ] Finite execution planner

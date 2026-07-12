@@ -1,5 +1,6 @@
 import {
   RequirementResultSchema,
+  type AcceptanceContract,
   type CheckDefinition,
   type Observation,
   type Requirement,
@@ -38,6 +39,11 @@ export function aggregateRequirementResult(
   observations: readonly Observation[],
 ): RequirementResult {
   if (requirement.class !== "EXECUTABLE") {
+    if (checks.length > 0 || observations.length > 0) {
+      throw new TypeError(
+        `Only executable requirement ${requirement.id} may have checks or observations`,
+      );
+    }
     return nonExecutableResult(requirement);
   }
 
@@ -64,6 +70,11 @@ export function aggregateRequirementResult(
     if (check.requirementId !== requirement.id) {
       throw new TypeError(
         `Check ${check.checkId} does not belong to requirement ${requirement.id}`,
+      );
+    }
+    if (check.intent !== requirement.intent) {
+      throw new TypeError(
+        `Check ${check.checkId} intent does not match requirement ${requirement.id}`,
       );
     }
     if (observationsByCheck.has(check.checkId)) {
@@ -127,5 +138,60 @@ export function aggregateRequirementResult(
       ? { repairHint: "Review the contradicted acceptance checks." }
       : {}),
     rerunEligible: status === "FAIL" || status === "UNVERIFIED",
+  });
+}
+
+export function aggregateRequirementResults(
+  contract: AcceptanceContract,
+  checks: readonly CheckDefinition[],
+  observations: readonly Observation[],
+): RequirementResult[] {
+  const requirementIds = new Set(
+    contract.requirements.map((requirement) => requirement.id),
+  );
+  const checkIds = new Set<string>();
+  for (const check of checks) {
+    if (!requirementIds.has(check.requirementId)) {
+      throw new TypeError(
+        `Check ${check.checkId} references an unknown requirement`,
+      );
+    }
+    if (checkIds.has(check.checkId)) {
+      throw new TypeError(`Duplicate check ID: ${check.checkId}`);
+    }
+    checkIds.add(check.checkId);
+  }
+
+  const observationIds = new Set<string>();
+  for (const observation of observations) {
+    if (!checkIds.has(observation.checkId)) {
+      throw new TypeError(
+        `Observation ${observation.observationId} references an unknown check`,
+      );
+    }
+    if (observationIds.has(observation.observationId)) {
+      throw new TypeError(
+        `Duplicate observation ID: ${observation.observationId}`,
+      );
+    }
+    observationIds.add(observation.observationId);
+  }
+
+  return contract.requirements.map((requirement) => {
+    const requirementChecks = checks.filter(
+      (check) => check.requirementId === requirement.id,
+    );
+    const requirementCheckIds = new Set(
+      requirementChecks.map((check) => check.checkId),
+    );
+    const requirementObservations = observations.filter((observation) =>
+      requirementCheckIds.has(observation.checkId),
+    );
+
+    return aggregateRequirementResult(
+      requirement,
+      requirementChecks,
+      requirementObservations,
+    );
   });
 }

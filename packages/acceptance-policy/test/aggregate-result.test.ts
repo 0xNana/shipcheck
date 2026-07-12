@@ -1,11 +1,15 @@
 import {
+  AcceptanceContractSchema,
   CheckDefinitionSchema,
   ObservationSchema,
   RequirementSchema,
 } from "@shipcheck/domain";
 import { describe, expect, it } from "vitest";
 
-import { aggregateRequirementResult } from "../src/index.js";
+import {
+  aggregateRequirementResult,
+  aggregateRequirementResults,
+} from "../src/index.js";
 
 const executableRequirement = RequirementSchema.parse({
   id: "req_pricing",
@@ -117,6 +121,24 @@ describe("aggregateRequirementResult", () => {
     expect(result.rerunEligible).toBe(false);
   });
 
+  it("rejects a check whose intent does not match the requirement", () => {
+    const unrelatedCheck = CheckDefinitionSchema.parse({
+      checkId: "check_unrelated",
+      requirementId: "req_pricing",
+      adapter: "PUBLIC_WEB",
+      intent: "HTTPS_ENABLED",
+      parameters: {},
+    });
+
+    expect(() =>
+      aggregateRequirementResult(
+        executableRequirement,
+        [unrelatedCheck],
+        [],
+      ),
+    ).toThrow(/intent/i);
+  });
+
   it("lets contradictory evidence fail before an execution error", () => {
     const result = aggregateRequirementResult(
       executableRequirement,
@@ -172,5 +194,80 @@ describe("aggregateRequirementResult", () => {
     expect(result.observationIds).toEqual(["obs_a", "obs_b"]);
     expect(result.evidenceIds).toEqual(["ev_a", "ev_b", "ev_shared"]);
     expect(result.rerunEligible).toBe(false);
+  });
+});
+
+describe("aggregateRequirementResults", () => {
+  const testContract = AcceptanceContractSchema.parse({
+    schemaVersion: "shipcheck-acceptance-contract-v1.0.0",
+    contractId: "contract_aggregation",
+    compilerVersion: "compiler-v1",
+    policyVersion: "policy-v1",
+    executionPolicyVersion: "execution-v1",
+    target: "https://example.com",
+    requirements: [executableRequirement],
+    createdAt: "2026-07-12T10:00:00Z",
+    contractHash: "0".repeat(64),
+  });
+
+  it("returns one result per contract requirement in contract order", () => {
+    const results = aggregateRequirementResults(
+      testContract,
+      [checkA],
+      [observation("check_a", "OBSERVED_TRUE", "obs_a")],
+    );
+
+    expect(results.map(({ requirementId }) => requirementId)).toEqual([
+      "req_pricing",
+    ]);
+    expect(results[0]?.status).toBe("PASS");
+  });
+
+  it("rejects an observation that does not belong to a planned check", () => {
+    const orphan = ObservationSchema.parse({
+      observationId: "obs_orphan",
+      checkId: "check_orphan",
+      status: "OBSERVED_TRUE",
+      observedAt: "2026-07-12T10:00:00Z",
+      summary: "No planned check owns this observation.",
+      facts: {},
+      evidenceIds: [],
+    });
+
+    expect(() =>
+      aggregateRequirementResults(testContract, [checkA], [orphan]),
+    ).toThrow(/observation/i);
+  });
+
+  it("rejects checks attached to a non-executable requirement", () => {
+    const subjective = RequirementSchema.parse({
+      id: "req_subjective",
+      statement: "The design feels modern.",
+      provenance: {
+        kind: "BRIEF_SPAN",
+        sourceText: "modern",
+        start: 0,
+        end: 6,
+      },
+      class: "SUBJECTIVE",
+      priority: "REQUIRED",
+      prioritySource: "DEFAULT",
+      confidence: 1,
+    });
+    const subjectiveContract = AcceptanceContractSchema.parse({
+      ...testContract,
+      requirements: [subjective],
+    });
+    const invalidCheck = CheckDefinitionSchema.parse({
+      checkId: "check_subjective",
+      requirementId: "req_subjective",
+      adapter: "PUBLIC_WEB",
+      intent: "CONTENT_PRESENT",
+      parameters: {},
+    });
+
+    expect(() =>
+      aggregateRequirementResults(subjectiveContract, [invalidCheck], []),
+    ).toThrow(/executable/i);
   });
 });

@@ -55,3 +55,9 @@
 **Decision:** Contract hashes omit `contractHash`. Receipt hashes omit `receiptHash`, signatures, and anchors. Evidence hashes omit expiring signed URLs.
 
 **Reason:** Self-referential and mutable delivery fields make deterministic verification impossible.
+
+## ADR-011 — Explicit systemic execution status
+
+**Decision:** The pure acceptance function receives `COMPLETED` or `SYSTEMIC_FAILURE` as an explicit normalized orchestration input.
+
+**Reason:** A systemic worker failure cannot be inferred reliably from requirement results; an individual inconclusive check must remain distinct from failure of the run as a whole.

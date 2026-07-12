@@ -68,6 +68,8 @@ Apply the first matching rule in this order:
 6. any remaining non-pass result, including subjective, unsupported, or optional failure → `ACCEPTED_WITH_NOTES`;
 7. otherwise → `ACCEPTED`.
 
+The orchestrator supplies a normalized execution status of `COMPLETED` or `SYSTEMIC_FAILURE`. Use `SYSTEMIC_FAILURE` only when the run as a whole cannot produce a trustworthy result set. Individual browser/check errors remain `UNVERIFIED` requirement results and do not imply systemic failure.
+
 Subjective and unsupported requirements remain visible and can never pass. Required or critical instances prevent unconditional acceptance.
 
 ## Requirement-result aggregation

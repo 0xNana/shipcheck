@@ -64,12 +64,15 @@ determineAcceptance(
   contract: AcceptanceContract,
   results: RequirementResult[],
   policy: AcceptancePolicy,
+  executionStatus: "COMPLETED" | "SYSTEMIC_FAILURE",
 ): OverallVerdict
 ```
 
 No network, clock, model, or DB dependency.
 
 Implement the ordered precedence in `config/acceptance-policy.v1.json`; do not infer precedence from object-key order or prose.
+
+`SYSTEMIC_FAILURE` is an explicit normalized orchestration input. Do not infer it from a single `UNVERIFIED` requirement.
 
 ### 3 — Compiler adapter
 

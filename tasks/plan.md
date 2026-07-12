@@ -40,14 +40,14 @@ Build ShipCheck as a strict TypeScript monorepo that compiles delivery briefs in
 
 ### Phase 2: Deterministic Acceptance
 
-- [ ] Task 6: Implement observation-to-requirement-result aggregation.
-- [ ] Task 7: Implement the pure acceptance policy and truth-table/property tests.
+- [x] Task 6: Implement observation-to-requirement-result aggregation.
+- [x] Task 7: Implement the pure acceptance policy and truth-table/property tests.
 - [ ] Task 8: Implement evidence-manifest and receipt construction.
 
 ### Checkpoint: Deterministic Core
 
-- [ ] Identical normalized inputs produce byte-equivalent policy output.
-- [ ] Missing evidence cannot become `PASS`.
+- [x] Identical normalized inputs produce byte-equivalent policy output.
+- [x] Missing evidence cannot become `PASS`.
 - [ ] Execution errors cannot become product failures.
 
 ### Phase 3: Compilation and Planning

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   AcceptanceContractSchema,
+  AcceptancePolicySchema,
   validateRequirementProvenance,
 } from "../src/index.js";
 
@@ -137,5 +138,21 @@ describe("validateRequirementProvenance", () => {
         brief,
       ),
     ).toBe(false);
+  });
+});
+
+describe("AcceptancePolicySchema", () => {
+  it("rejects duplicate conditions and requires OTHERWISE to be final", () => {
+    expect(() =>
+      AcceptancePolicySchema.parse({
+        policyVersion: "policy-v1",
+        minimumExecutableRequiredForAcceptance: 1,
+        precedence: [
+          { condition: "OTHERWISE", verdict: "ACCEPTED" },
+          { condition: "OTHERWISE", verdict: "ACCEPTED_WITH_NOTES" },
+        ],
+        notes: [],
+      }),
+    ).toThrow();
   });
 });

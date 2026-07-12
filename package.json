@@ -8,9 +8,9 @@
   },
   "scripts": {
     "build": "pnpm --recursive build",
-    "lint": "pnpm --recursive lint",
-    "test": "pnpm --recursive test",
-    "typecheck": "pnpm --recursive typecheck"
+    "lint": "pnpm build && pnpm --recursive lint",
+    "test": "pnpm build && pnpm --recursive test",
+    "typecheck": "pnpm build && pnpm --recursive typecheck"
   },
   "devDependencies": {
     "@eslint/js": "^9.31.0",
