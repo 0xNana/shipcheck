@@ -27,17 +27,19 @@ RUN groupadd --system shipcheck && useradd --system --gid shipcheck shipcheck \
   && ln -sf "${CHROMIUM}" /usr/local/bin/shipcheck-chromium
 ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/local/bin/shipcheck-chromium
 
-USER shipcheck
-
+# pnpm resolves workspace deps via apps/*/node_modules and packages/*/node_modules
+# symlinks into /app/node_modules/.pnpm — all three trees are required at runtime.
+COPY --from=build --chown=shipcheck:shipcheck /app/package.json ./package.json
+COPY --from=build --chown=shipcheck:shipcheck /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY --from=build --chown=shipcheck:shipcheck /app/node_modules ./node_modules
-COPY --from=build --chown=shipcheck:shipcheck /app/apps/api/dist ./apps/api/dist
 COPY --from=build --chown=shipcheck:shipcheck /app/apps/api/package.json ./apps/api/package.json
+COPY --from=build --chown=shipcheck:shipcheck /app/apps/api/dist ./apps/api/dist
+COPY --from=build --chown=shipcheck:shipcheck /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build --chown=shipcheck:shipcheck /app/apps/web/dist ./apps/web/dist
 COPY --from=build --chown=shipcheck:shipcheck /app/packages ./packages
 COPY --from=build --chown=shipcheck:shipcheck /app/developer-docs/config ./developer-docs/config
-COPY --from=build --chown=shipcheck:shipcheck /app/package.json ./package.json
-COPY --from=build --chown=shipcheck:shipcheck /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 
+USER shipcheck
 WORKDIR /app/apps/api
 EXPOSE 3000
 CMD ["node", "dist/server.js"]
