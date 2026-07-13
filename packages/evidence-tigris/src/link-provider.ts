@@ -9,6 +9,7 @@ import {
   createTigrisEvidenceBlobStoreFromEnv,
   TigrisEvidenceBlobStore,
 } from "./blob-store.js";
+import { resolveTigrisStorageEnv } from "./env.js";
 import { evidenceObjectKey } from "./keys.js";
 
 export interface TigrisEvidenceLinkProviderOptions {
@@ -71,23 +72,17 @@ export class TigrisEvidenceLinkProvider implements EvidenceLinkProvider {
 export function createTigrisEvidenceLinkProviderFromEnv(
   env: NodeJS.ProcessEnv = process.env,
 ): TigrisEvidenceLinkProvider {
+  const storage = resolveTigrisStorageEnv(env);
   const blobStore = createTigrisEvidenceBlobStoreFromEnv(env);
-  const bucket = env["OBJECT_STORE_BUCKET"];
-  const endpoint = env["OBJECT_STORE_ENDPOINT"];
-  if (bucket === undefined || endpoint === undefined) {
-    throw new TypeError(
-      "OBJECT_STORE_BUCKET and OBJECT_STORE_ENDPOINT are required",
-    );
-  }
   return new TigrisEvidenceLinkProvider({
-    bucket,
+    bucket: storage.bucket,
     blobStore,
     clientConfig: {
-      endpoint,
-      region: env["OBJECT_STORE_REGION"] ?? "auto",
+      endpoint: storage.endpoint,
+      region: storage.region,
       credentials: {
-        accessKeyId: env["OBJECT_STORE_ACCESS_KEY"] ?? "",
-        secretAccessKey: env["OBJECT_STORE_SECRET_KEY"] ?? "",
+        accessKeyId: storage.accessKeyId,
+        secretAccessKey: storage.secretAccessKey,
       },
       forcePathStyle: true,
     },

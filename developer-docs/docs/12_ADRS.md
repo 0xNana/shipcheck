@@ -86,8 +86,8 @@
 
 **Reason:** Settlement finalization must survive process restarts and scale horizontally without double charging or lost receipts.
 
-## ADR-016 — Fly.io runtime with Tigris evidence
+## ADR-016 — Railway runtime with S3-compatible evidence
 
-**Decision:** Production ships as a single Fly.io app with Playwright Chromium, Fly Managed Postgres, and private Tigris object storage. Secrets are injected at runtime; workers never receive OKX credentials.
+**Decision:** Production ships as a single Railway service built from the root `Dockerfile` (Playwright Chromium), with Supabase Postgres via `DATABASE_URL` and private S3-compatible object storage for evidence. Secrets are injected at runtime; workers never receive OKX credentials.
 
-**Reason:** Browser execution needs container isolation and sufficient CPU/memory; Fly provides co-located managed data services with minimal operational surface for the hackathon launch.
+**Reason:** Browser execution needs container isolation and sufficient CPU/memory. Railway provides Dockerfile deploys, pre-deploy migrations, and health checks with a small operational surface for the V1 launch. Postgres and object storage remain external so the app stays portable.

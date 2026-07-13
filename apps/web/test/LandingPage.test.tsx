@@ -15,17 +15,27 @@ describe("LandingPage", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "Agents claim completion. ShipCheck produces acceptance.",
+        name: "Your agent says it’s done. Is it verifiable?",
       }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Agent Acceptance Layer")).toBeInTheDocument();
+    expect(screen.getByText("Do not trust “done.” Verify it.")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Overview" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Bounded public-web scope" }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("contentinfo", { name: "Site" })).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "API usage" }),
+      screen.getByText("Completion is a claim. Acceptance requires evidence.", {
+        selector: ".site-footer__tagline",
+      }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Open the demo acceptance report" }),
+      screen.getByRole("link", {
+        name: "Verify a delivery — open the demo acceptance report",
+      }),
     ).toHaveAttribute("href", "/reports/demo");
   });
 
@@ -36,6 +46,8 @@ describe("LandingPage", () => {
       </MemoryRouter>,
     );
 
-    expect(await axe(container, { rules: { "color-contrast": { enabled: false } } })).toHaveNoViolations();
+    expect(
+      await axe(container, { rules: { "color-contrast": { enabled: false } } }),
+    ).toHaveNoViolations();
   });
 });

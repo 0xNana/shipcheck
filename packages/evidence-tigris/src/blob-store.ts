@@ -7,6 +7,7 @@ import {
 } from "@aws-sdk/client-s3";
 import type { EvidenceBlobStore, EvidenceBlobWrite } from "@shipcheck/evidence-store";
 
+import { resolveTigrisStorageEnv } from "./env.js";
 import { evidenceObjectKey } from "./keys.js";
 
 export interface TigrisEvidenceBlobStoreOptions {
@@ -75,28 +76,15 @@ export class TigrisEvidenceBlobStore implements EvidenceBlobStore {
 export function createTigrisEvidenceBlobStoreFromEnv(
   env: NodeJS.ProcessEnv = process.env,
 ): TigrisEvidenceBlobStore {
-  const bucket = env["OBJECT_STORE_BUCKET"];
-  const endpoint = env["OBJECT_STORE_ENDPOINT"];
-  const accessKeyId = env["OBJECT_STORE_ACCESS_KEY"];
-  const secretAccessKey = env["OBJECT_STORE_SECRET_KEY"];
-  if (
-    bucket === undefined ||
-    endpoint === undefined ||
-    accessKeyId === undefined ||
-    secretAccessKey === undefined
-  ) {
-    throw new TypeError(
-      "OBJECT_STORE_BUCKET, OBJECT_STORE_ENDPOINT, OBJECT_STORE_ACCESS_KEY, and OBJECT_STORE_SECRET_KEY are required",
-    );
-  }
+  const storage = resolveTigrisStorageEnv(env);
   return new TigrisEvidenceBlobStore({
-    bucket,
+    bucket: storage.bucket,
     clientConfig: {
-      endpoint,
-      region: env["OBJECT_STORE_REGION"] ?? "auto",
+      endpoint: storage.endpoint,
+      region: storage.region,
       credentials: {
-        accessKeyId,
-        secretAccessKey,
+        accessKeyId: storage.accessKeyId,
+        secretAccessKey: storage.secretAccessKey,
       },
       forcePathStyle: true,
     },

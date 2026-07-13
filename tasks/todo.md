@@ -4,7 +4,7 @@
 
 V1 implementation complete. External launch steps remain manual:
 
-- Provision Fly.io app, Managed Postgres, and Tigris bucket
+- Provision Railway service from the root Dockerfile; attach Supabase `DATABASE_URL` and S3-compatible evidence credentials
 - Set secrets from `.env.example`
 - Run `scripts/verify-deployment.sh` against production URL
 - Submit OKX marketplace listing using `developer-docs/marketplace/listing.md`

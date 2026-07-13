@@ -32,6 +32,19 @@ See `.env.example` at the repository root.
 
 Never place OKX API secrets in browser workers.
 
+## Railway
+
+Production deploys as one Railway service from the root `Dockerfile` ([config as code](https://docs.railway.com/config-as-code/reference)).
+
+- Builder: `DOCKERFILE` via [`railway.toml`](../../railway.toml)
+- Pre-deploy: `node /app/apps/api/dist/migrate-cli.js` ([pre-deploy command](https://docs.railway.com/deployments/pre-deploy-command))
+- Healthcheck: `GET /health/live`
+- Bind: process listens on `0.0.0.0:$PORT`
+- Data: Supabase Postgres (`DATABASE_URL`) + S3-compatible evidence credentials (`TIGRIS_STORAGE_*` or `AWS_*`)
+- Size: allocate enough memory for Playwright Chromium (≈4 GB)
+
+Set `PUBLIC_BASE_URL` to the Railway HTTPS origin (custom domain or `*.up.railway.app`).
+
 ## Health
 
 - `GET /health` — backward-compatible `{ "status": "ok" }`;

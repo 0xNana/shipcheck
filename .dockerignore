@@ -18,7 +18,6 @@ pnpm-lock.yaml.*
 .env.*
 !.env.example
 
-# Docs and fixtures not needed at runtime
-developer-docs
+# Fixtures / scratch (policy JSON is copied explicitly in the Dockerfile)
 apps/fixture-sites
 agent-transcripts

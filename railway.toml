@@ -1,0 +1,13 @@
+# https://docs.railway.com/config-as-code/reference
+# https://docs.railway.com/builds/dockerfiles
+# https://docs.railway.com/deployments/pre-deploy-command
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+preDeployCommand = ["node /app/apps/api/dist/migrate-cli.js"]
+healthcheckPath = "/health/live"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"

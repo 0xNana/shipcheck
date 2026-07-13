@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { resolveTigrisStorageEnv } from "@shipcheck/evidence-tigris";
 import { incidentGatesFromEnv, parseBooleanEnv } from "@shipcheck/service-ops";
 
 const usdPricePattern = /^\$(?:0|[1-9]\d*)(?:\.\d{1,6})?$/u;
@@ -17,18 +18,21 @@ const EnvSchema = z
     METRICS_BEARER_TOKEN: nonEmptyString.optional(),
     VERIFICATION_ENABLED: z.string().optional(),
     BROWSER_EXECUTION_ENABLED: z.string().optional(),
-    LLM_PROVIDER: z.string().optional(),
-    LLM_API_KEY: z.string().optional(),
-    OPENAI_API_KEY: z.string().optional(),
+    OPENAI_API_KEY: nonEmptyString,
     OPENAI_BASE_URL: z.url().optional(),
     REQUIREMENT_COMPILER_MODEL: nonEmptyString,
     DATABASE_URL: nonEmptyString,
     REDIS_URL: z.string().optional(),
-    OBJECT_STORE_ENDPOINT: z.url(),
-    OBJECT_STORE_BUCKET: nonEmptyString,
-    OBJECT_STORE_ACCESS_KEY: nonEmptyString,
-    OBJECT_STORE_SECRET_KEY: nonEmptyString,
-    OBJECT_STORE_REGION: z.string().optional(),
+    TIGRIS_STORAGE_ENDPOINT: z.url().optional(),
+    TIGRIS_STORAGE_ACCESS_KEY_ID: z.string().optional(),
+    TIGRIS_STORAGE_SECRET_ACCESS_KEY: z.string().optional(),
+    TIGRIS_STORAGE_BUCKET: z.string().optional(),
+    TIGRIS_STORAGE_REGION: z.string().optional(),
+    AWS_ENDPOINT_URL_S3: z.url().optional(),
+    AWS_ACCESS_KEY_ID: z.string().optional(),
+    AWS_SECRET_ACCESS_KEY: z.string().optional(),
+    AWS_REGION: z.string().optional(),
+    BUCKET_NAME: z.string().optional(),
     EVIDENCE_RETENTION_DAYS: positiveInt.default(7),
     REQUEST_RETENTION_DAYS: positiveInt.default(30),
     RECEIPT_RETENTION_DAYS: positiveInt.default(30),
@@ -46,21 +50,26 @@ const EnvSchema = z
     PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: nonEmptyString.optional(),
   })
   .superRefine((env, context) => {
-    if (
-      env.OPENAI_API_KEY === undefined &&
-      env.LLM_API_KEY === undefined
-    ) {
-      context.addIssue({
-        code: "custom",
-        message: "OPENAI_API_KEY or LLM_API_KEY is required",
-        path: ["OPENAI_API_KEY"],
-      });
-    }
     if (Number(env.SHIPCHECK_PRICE.slice(1)) <= 0) {
       context.addIssue({
         code: "custom",
         message: "SHIPCHECK_PRICE must be greater than zero",
         path: ["SHIPCHECK_PRICE"],
+      });
+    }
+    const hasTigrisCredentials =
+      (env.TIGRIS_STORAGE_ENDPOINT !== undefined &&
+        env.TIGRIS_STORAGE_ACCESS_KEY_ID !== undefined &&
+        env.TIGRIS_STORAGE_SECRET_ACCESS_KEY !== undefined) ||
+      (env.AWS_ENDPOINT_URL_S3 !== undefined &&
+        env.AWS_ACCESS_KEY_ID !== undefined &&
+        env.AWS_SECRET_ACCESS_KEY !== undefined);
+    if (!hasTigrisCredentials) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "Object storage requires TIGRIS_STORAGE_ENDPOINT/ACCESS_KEY_ID/SECRET_ACCESS_KEY (or AWS_ENDPOINT_URL_S3/AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY)",
+        path: ["TIGRIS_STORAGE_ENDPOINT"],
       });
     }
   });
@@ -72,7 +81,6 @@ export type ApiConfig = {
   readonly metricsBearerToken?: string;
   readonly verificationEnabled: boolean;
   readonly browserExecutionEnabled: boolean;
-  readonly llmProvider?: string;
   readonly openAiApiKey: string;
   readonly openAiBaseUrl?: string;
   readonly requirementCompilerModel: string;
@@ -117,10 +125,7 @@ function parseShipcheckPrice(value: string): `$${string}` {
 export function loadApiConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
   const parsed = EnvSchema.parse(env);
   const gates = incidentGatesFromEnv(env);
-  const openAiApiKey = parsed.OPENAI_API_KEY ?? parsed.LLM_API_KEY;
-  if (openAiApiKey === undefined) {
-    throw new TypeError("OPENAI_API_KEY or LLM_API_KEY is required");
-  }
+  const storage = resolveTigrisStorageEnv(env);
 
   return {
     nodeEnv: parsed.NODE_ENV,
@@ -131,10 +136,7 @@ export function loadApiConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
       : { metricsBearerToken: parsed.METRICS_BEARER_TOKEN }),
     verificationEnabled: gates.verificationEnabled,
     browserExecutionEnabled: gates.browserExecutionEnabled,
-    ...(parsed.LLM_PROVIDER === undefined
-      ? {}
-      : { llmProvider: parsed.LLM_PROVIDER }),
-    openAiApiKey,
+    openAiApiKey: parsed.OPENAI_API_KEY,
     ...(parsed.OPENAI_BASE_URL === undefined
       ? {}
       : { openAiBaseUrl: parsed.OPENAI_BASE_URL }),
@@ -143,11 +145,11 @@ export function loadApiConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
     ...(parsed.REDIS_URL === undefined || parsed.REDIS_URL.length === 0
       ? {}
       : { redisUrl: parsed.REDIS_URL }),
-    objectStoreEndpoint: parsed.OBJECT_STORE_ENDPOINT,
-    objectStoreBucket: parsed.OBJECT_STORE_BUCKET,
-    objectStoreAccessKey: parsed.OBJECT_STORE_ACCESS_KEY,
-    objectStoreSecretKey: parsed.OBJECT_STORE_SECRET_KEY,
-    objectStoreRegion: parsed.OBJECT_STORE_REGION ?? "auto",
+    objectStoreEndpoint: storage.endpoint,
+    objectStoreBucket: storage.bucket,
+    objectStoreAccessKey: storage.accessKeyId,
+    objectStoreSecretKey: storage.secretAccessKey,
+    objectStoreRegion: storage.region,
     evidenceRetentionDays: parsed.EVIDENCE_RETENTION_DAYS,
     requestRetentionDays: parsed.REQUEST_RETENTION_DAYS,
     receiptRetentionDays: parsed.RECEIPT_RETENTION_DAYS,

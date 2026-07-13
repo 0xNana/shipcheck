@@ -178,7 +178,7 @@ export async function startProductionServer(
 
   mountStaticWeb(app);
 
-  const server = app.listen(config.port, () => {
+  const server = app.listen(config.port, "0.0.0.0", () => {
     logger.info("server.started", {
       stage: "boot",
       path: String(config.port),

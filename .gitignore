@@ -34,8 +34,8 @@ Thumbs.db
 *.swp
 *.swo
 
-# Fly / deployment local state
-.fly/
+# Railway / deployment local state
+.railway/
 
 # Agent / tool scratch
 .cursor/

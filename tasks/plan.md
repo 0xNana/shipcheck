@@ -113,4 +113,4 @@ Build ShipCheck as a strict TypeScript monorepo that compiles delivery briefs in
 ## Open Questions
 
 - Production LLM model selection is environment-driven via `REQUIREMENT_COMPILER_MODEL` (OpenAI-compatible adapter shipped).
-- Fly Managed Postgres and Tigris are the chosen V1 providers; Redis queue remains deferred behind interfaces.
+- Railway (Dockerfile), Supabase Postgres, and S3-compatible evidence storage are the chosen V1 providers; Redis queue remains deferred behind interfaces.

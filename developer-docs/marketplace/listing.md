@@ -47,7 +47,7 @@ ShipCheck turns a plain-language delivery brief into machine-verifiable acceptan
 - [ ] Configure OKX API credentials (`OKX_API_KEY`, `OKX_SECRET_KEY`, `OKX_PASSPHRASE`)
 - [ ] Set `PUBLIC_BASE_URL` to the deployed HTTPS origin
 - [ ] Set `METRICS_BEARER_TOKEN` and restrict `/metrics` access
-- [ ] Verify `/health/live` and `/health/ready` on Fly
+- [ ] Verify `/health/live` and `/health/ready` on Railway
 - [ ] Run `scripts/verify-deployment.sh` after deploy
 - [ ] Run `scripts/demo-90s.sh` against fixture sites before listing
 - [ ] Confirm unpaid `POST /v1/verify` returns `402`

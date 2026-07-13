@@ -7,6 +7,7 @@ import { ApiClientError } from "../api.js";
 import { LimitationNotice } from "../components/LimitationNotice.js";
 import { ReceiptFooter } from "../components/ReceiptFooter.js";
 import { RequirementRows } from "../components/RequirementRows.js";
+import { SiteFooter } from "../components/SiteFooter.js";
 import { SummaryCounts } from "../components/SummaryCounts.js";
 import { VerdictBanner } from "../components/VerdictBanner.js";
 import {
@@ -118,67 +119,70 @@ export function ReportPage() {
   }
 
   return (
-    <main className="page report">
-      <p className="report__nav">
-        <Link to="/" aria-label="Back to ShipCheck home">
-          ShipCheck
-        </Link>
-      </p>
-
-      {state.status === "loading" ? (
-        <p role="status" aria-live="polite">
-          Loading report…
+    <div className="shell">
+      <main className="page report">
+        <p className="report__nav">
+          <Link to="/" aria-label="Back to ShipCheck home">
+            ShipCheck
+          </Link>
         </p>
-      ) : null}
 
-      {state.status === "error" ? (
-        <section
-          className="report__error"
-          role="alert"
-          aria-labelledby="report-error-heading"
-        >
-          <h1 id="report-error-heading">
-            {state.code === "NOT_FOUND"
-              ? "Report not found"
-              : "Unable to load report"}
-          </h1>
-          <p>{state.message}</p>
-          {state.code === "NOT_FOUND" ? (
-            <p>
-              Reports are unlisted and may expire after retention. Confirm the
-              receipt ID from the verify response.
-            </p>
-          ) : null}
-        </section>
-      ) : null}
+        {state.status === "loading" ? (
+          <p role="status" aria-live="polite">
+            Loading report…
+          </p>
+        ) : null}
 
-      {state.status === "ready" ? (
-        <>
-          <VerdictBanner verdict={state.view.verdict} />
-          <SummaryCounts summary={state.view.summary} />
-          <RequirementRows
-            requirements={state.view.requirements}
-            evidenceById={evidenceById}
-            openingEvidenceId={openingEvidenceId}
-            onOpenEvidence={(evidenceId) => {
-              void openEvidence(evidenceId);
-            }}
-          />
-          {evidenceError !== null ? (
-            <p className="report__evidence-error" role="alert">
-              {evidenceError}
-            </p>
-          ) : null}
-          <ReceiptFooter
-            receiptId={state.view.receiptId}
-            receiptHash={state.view.receiptHash}
-            target={state.view.target}
-            testedAt={state.view.testedAt}
-            verification={state.verification}
-          />
-          <LimitationNotice notice={state.view.limitationNotice} />
-        </>
-      ) : null}
-    </main>
+        {state.status === "error" ? (
+          <section
+            className="report__error"
+            role="alert"
+            aria-labelledby="report-error-heading"
+          >
+            <h1 id="report-error-heading">
+              {state.code === "NOT_FOUND"
+                ? "Report not found"
+                : "Unable to load report"}
+            </h1>
+            <p>{state.message}</p>
+            {state.code === "NOT_FOUND" ? (
+              <p>
+                Reports are unlisted and may expire after retention. Confirm the
+                receipt ID from the verify response.
+              </p>
+            ) : null}
+          </section>
+        ) : null}
+
+        {state.status === "ready" ? (
+          <>
+            <VerdictBanner verdict={state.view.verdict} />
+            <SummaryCounts summary={state.view.summary} />
+            <RequirementRows
+              requirements={state.view.requirements}
+              evidenceById={evidenceById}
+              openingEvidenceId={openingEvidenceId}
+              onOpenEvidence={(evidenceId) => {
+                void openEvidence(evidenceId);
+              }}
+            />
+            {evidenceError !== null ? (
+              <p className="report__evidence-error" role="alert">
+                {evidenceError}
+              </p>
+            ) : null}
+            <ReceiptFooter
+              receiptId={state.view.receiptId}
+              receiptHash={state.view.receiptHash}
+              target={state.view.target}
+              testedAt={state.view.testedAt}
+              verification={state.verification}
+            />
+            <LimitationNotice notice={state.view.limitationNotice} />
+          </>
+        ) : null}
+      </main>
+      <SiteFooter />
+    </div>
   );
 }

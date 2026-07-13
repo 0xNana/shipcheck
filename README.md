@@ -90,8 +90,8 @@ OpenAPI: [`developer-docs/openapi.yaml`](developer-docs/openapi.yaml)
 Copy [`.env.example`](.env.example). Important variables:
 
 - `PUBLIC_BASE_URL` — origin used for `reportUrl`
-- `DATABASE_URL` — PostgreSQL connection
-- `OBJECT_STORE_*` — Tigris/S3 evidence storage
+- `DATABASE_URL` — PostgreSQL (e.g. Supabase)
+- `TIGRIS_STORAGE_*` — S3-compatible evidence storage (`AWS_*` + `BUCKET_NAME` also accepted; bucket defaults to `shipcheck`)
 - `OPENAI_API_KEY` / `REQUIREMENT_COMPILER_MODEL` — compiler model
 - `OKX_*`, `PAY_TO_ADDRESS`, `X402_NETWORK`, `SHIPCHECK_PRICE` — payment
 - `VERIFICATION_ENABLED`, `BROWSER_EXECUTION_ENABLED` — incident gates
@@ -102,20 +102,20 @@ Never put OKX secrets in browser workers.
 
 ## Deployment
 
-Production targets Fly.io with Managed Postgres and private Tigris storage.
+Production targets Railway with Supabase Postgres and private S3-compatible evidence storage (e.g. Tigris or R2). Use a container size that can run Playwright Chromium (≈4 GB RAM).
 
 ```bash
-# Build locally or via Fly remote builder
-fly deploy
+# Link and deploy (Dockerfile + railway.toml)
+railway up
 
 # Smoke-check a deployed origin
-./scripts/verify-deployment.sh https://your-app.fly.dev
+./scripts/verify-deployment.sh https://your-app.up.railway.app
 ```
 
 See:
 
 - [`Dockerfile`](Dockerfile)
-- [`fly.toml`](fly.toml)
+- [`railway.toml`](railway.toml)
 - [`developer-docs/docs/09_DEPLOYMENT_AND_OPERATIONS.md`](developer-docs/docs/09_DEPLOYMENT_AND_OPERATIONS.md)
 - [`developer-docs/marketplace/listing.md`](developer-docs/marketplace/listing.md)
 

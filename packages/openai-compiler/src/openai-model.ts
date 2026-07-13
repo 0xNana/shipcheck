@@ -108,15 +108,12 @@ export function createOpenAiCompilerModelFromEnv(
   env: NodeJS.ProcessEnv = process.env,
   overrides: Partial<OpenAiCompilerModelOptions> = {},
 ): RequirementCompilerModel {
-  const apiKey =
-    overrides.apiKey ??
-    env["OPENAI_API_KEY"] ??
-    env["LLM_API_KEY"];
+  const apiKey = overrides.apiKey ?? env["OPENAI_API_KEY"];
   const model =
     overrides.model ?? env["REQUIREMENT_COMPILER_MODEL"];
   if (apiKey === undefined || model === undefined) {
     throw new TypeError(
-      "OPENAI_API_KEY (or LLM_API_KEY) and REQUIREMENT_COMPILER_MODEL are required",
+      "OPENAI_API_KEY and REQUIREMENT_COMPILER_MODEL are required",
     );
   }
   return createOpenAiCompilerModel({
