@@ -64,6 +64,7 @@ GET  /v1/receipts/{receiptId}/verify
 | COMPILATION_FAILED | 422 | No valid contract |
 | PAYMENT_REQUIRED | 402 | x402 challenge |
 | REQUEST_CONFLICT | 409 | Idempotency mismatch |
+| NOT_FOUND | 404 | Request or receipt does not exist |
 | RATE_LIMITED | 429 | Rate limit |
 | EXECUTION_UNAVAILABLE | 503 | No safe execution capacity |
 | INTERNAL_ERROR | 500 | Unexpected failure |

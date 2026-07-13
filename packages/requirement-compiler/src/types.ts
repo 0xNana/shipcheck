@@ -11,6 +11,7 @@ export interface CompilerModelRequest {
   readonly responseSchema: Readonly<Record<string, unknown>>;
   readonly isRepair: boolean;
   readonly issues?: readonly string[];
+  readonly signal?: AbortSignal;
 }
 
 export interface RequirementCompilerModel {

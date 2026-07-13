@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -37,6 +38,10 @@ export interface CheckExecutionResult {
 
 export interface WorkerExecutionResult {
   readonly executionStatus: "COMPLETED" | "INCOMPLETE";
+  readonly targetFingerprint: {
+    readonly finalUrl: string;
+    readonly sha256: string;
+  };
   readonly results: readonly CheckExecutionResult[];
   readonly blockedRequests: number;
   readonly contextClosed: boolean;
@@ -49,6 +54,7 @@ export interface WorkerExecutionResult {
 export interface WorkerRequest {
   readonly target: string;
   readonly checks: readonly PlannedCheck[];
+  readonly signal?: AbortSignal;
 }
 
 export interface WorkerBudgets {
@@ -115,6 +121,55 @@ function timeoutAfter<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
       (error: unknown) => {
         clearTimeout(timer);
         reject(error instanceof Error ? error : new Error("Worker failed"));
+      },
+    );
+  });
+}
+
+function abortReason(signal: AbortSignal): Error {
+  return signal.reason instanceof Error
+    ? signal.reason
+    : new Error("Public-web execution aborted");
+}
+
+function raceWithAbort<T>(
+  promise: Promise<T>,
+  signal: AbortSignal | undefined,
+  disposeLateResult: (value: T) => void | Promise<void>,
+): Promise<T> {
+  const dispose = (value: T): void => {
+    try {
+      void Promise.resolve(disposeLateResult(value)).catch(() => undefined);
+    } catch {
+      // Disposal is best-effort after the caller has already observed abort.
+    }
+  };
+  if (signal === undefined) return promise;
+  if (signal.aborted) {
+    void promise.then(dispose, () => undefined);
+    return Promise.reject(abortReason(signal));
+  }
+  return new Promise<T>((resolve, reject) => {
+    let aborted = false;
+    const onAbort = (): void => {
+      aborted = true;
+      reject(abortReason(signal));
+    };
+    signal.addEventListener("abort", onAbort, { once: true });
+    void promise.then(
+      (value) => {
+        signal.removeEventListener("abort", onAbort);
+        if (aborted) {
+          dispose(value);
+          return;
+        }
+        resolve(value);
+      },
+      (error: unknown) => {
+        signal.removeEventListener("abort", onAbort);
+        if (!aborted) {
+          reject(error instanceof Error ? error : new Error("Worker failed"));
+        }
       },
     );
   });
@@ -523,6 +578,7 @@ export class PublicWebWorker {
         bytes,
         createdAt: observedAt,
         redactionApplied: false,
+        ...(request.signal === undefined ? {} : { signal: request.signal }),
       });
       artifacts.set(artifact.id, artifact);
       for (const checkId of checkIds) {
@@ -555,14 +611,29 @@ export class PublicWebWorker {
     };
     let results: readonly CheckExecutionResult[] = [];
     let executionStatus: "COMPLETED" | "INCOMPLETE" = "INCOMPLETE";
+    let targetFingerprint = {
+      finalUrl: request.target,
+      sha256: createHash("sha256").update(request.target).digest("hex"),
+    };
+    const abortActiveWork = (): void => {
+      void context?.close({ reason: "ShipCheck run aborted" }).catch(() => undefined);
+      void browser?.close().catch(() => undefined);
+    };
+    request.signal?.addEventListener("abort", abortActiveWork, { once: true });
 
     try {
+      request.signal?.throwIfAborted();
       const target = await this.options.urlGuard.validate(request.target);
-      browser = await chromium.launch({
-        executablePath: this.options.executablePath,
-        headless: true,
-        args: ["--disable-dev-shm-usage"],
-      });
+      request.signal?.throwIfAborted();
+      browser = await raceWithAbort(
+        chromium.launch({
+          executablePath: this.options.executablePath,
+          headless: true,
+          args: ["--disable-dev-shm-usage"],
+        }),
+        request.signal,
+        (lateBrowser) => lateBrowser.close(),
+      );
       context = await browser.newContext({
         acceptDownloads: false,
         serviceWorkers: "block",
@@ -690,6 +761,12 @@ export class PublicWebWorker {
       )
         ? "INCOMPLETE"
         : "COMPLETED";
+      const finalUrl = activePage.url();
+      const html = await activePage.content();
+      targetFingerprint = {
+        finalUrl,
+        sha256: createHash("sha256").update(html, "utf8").digest("hex"),
+      };
     } catch {
       results = checks.map(executionError);
       executionStatus = "INCOMPLETE";
@@ -755,6 +832,7 @@ export class PublicWebWorker {
           () => false,
         );
       }
+      request.signal?.removeEventListener("abort", abortActiveWork);
     }
 
     const observations =
@@ -769,6 +847,7 @@ export class PublicWebWorker {
           );
     return {
       executionStatus,
+      targetFingerprint,
       results,
       blockedRequests: state.blockedRequests,
       contextClosed,

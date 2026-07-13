@@ -9,7 +9,9 @@
 - idempotency;
 - compiler invocation;
 - job orchestration;
-- receipt response.
+- receipt response;
+- structured logging and Prometheus metrics;
+- static web report shell.
 
 ### Browser worker
 
@@ -26,16 +28,21 @@
 
 ## Environment
 
-See `.env.example`.
+See `.env.example` at the repository root.
 
 Never place OKX API secrets in browser workers.
 
 ## Health
 
-- `GET /health` for API readiness;
-- internal liveness/readiness probes for workers.
+- `GET /health` — backward-compatible `{ "status": "ok" }`;
+- `GET /health/live` — process liveness, no external calls;
+- `GET /health/ready` — config validation plus optional Postgres ping. Readiness does not invoke OpenAI or OKX.
 
 ## Metrics
+
+Prometheus exposition is available at `GET /metrics` and requires `Authorization: Bearer ${METRICS_BEARER_TOKEN}`.
+
+Recorded series include:
 
 - requests;
 - paid requests;
@@ -48,8 +55,9 @@ Never place OKX API secrets in browser workers.
 - evidence bytes;
 - SSRF blocks;
 - blocked actions;
-- idempotency hits;
-- payment failures.
+- idempotency hits and conflicts;
+- payment failures;
+- persistence failures.
 
 ## Logging
 
@@ -68,6 +76,13 @@ Exclude:
 - form values;
 - signed evidence URLs;
 - raw page content.
+
+## Incident gates
+
+Set these environment flags to disable billable or risky paths without redeploying code:
+
+- `VERIFICATION_ENABLED=false` — returns `503 EXECUTION_UNAVAILABLE` on `POST /v1/verify` before payment settlement or compiler/browser work;
+- `BROWSER_EXECUTION_ENABLED=false` — blocks browser execution while leaving compile-only routes available.
 
 ## Incidents
 

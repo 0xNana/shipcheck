@@ -1,0 +1,24 @@
+# Dependencies and build artifacts
+node_modules
+**/node_modules
+**/dist
+**/.tsbuildinfo
+**/coverage
+.git
+.github
+.cursor
+tasks
+**/*.test.ts
+**/*.test.tsx
+**/test
+pnpm-lock.yaml.*
+
+# Local env and secrets
+.env
+.env.*
+!.env.example
+
+# Docs and fixtures not needed at runtime
+developer-docs
+apps/fixture-sites
+agent-transcripts

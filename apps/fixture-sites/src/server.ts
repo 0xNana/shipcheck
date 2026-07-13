@@ -3,6 +3,7 @@ import { once } from "node:events";
 
 export const FIXTURE_PATHS = [
   "/complete",
+  "/demo",
   "/missing-pricing",
   "/docs-404",
   "/waitlist-500",
@@ -109,6 +110,17 @@ async function handle(
       return;
     case "/missing-pricing":
       send(response, 200, page({ includePricing: false }));
+      return;
+    case "/demo":
+      send(
+        response,
+        200,
+        page({
+          includePricing: false,
+          waitlistAction: "/api/waitlist-failure",
+          overflow: true,
+        }),
+      );
       return;
     case "/docs-404":
       send(response, 200, page({ docsHref: "/missing-docs" }));

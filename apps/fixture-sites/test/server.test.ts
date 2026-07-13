@@ -61,6 +61,9 @@ describe("fixture sites", () => {
     expect(missingPricing).not.toContain("id=\"pricing\"");
     expect(missingDocs.status).toBe(404);
     expect(waitlistFailure.status).toBe(500);
+    const demoPage = await (await fetch(running.url("/demo"))).text();
+    expect(demoPage).not.toContain("id=\"pricing\"");
+    expect(demoPage).toContain('action="/api/waitlist-failure"');
     expect(privateRedirect.headers.get("location")).toBe(
       "http://169.254.169.254/latest/meta-data/",
     );

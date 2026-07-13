@@ -47,6 +47,12 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "402":
           description: x402 payment required
+        "409":
+          description: Idempotency key conflict or request already in progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "422":
           description: Requirement compilation failed
           content:
@@ -161,6 +167,56 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /v1/reports/{receiptId}:
+    get:
+      summary: Fetch an unlisted human-readable report bundle
+      description: Reports are accessed by unguessable receipt ID. Brief text and raw page content are not included.
+      parameters:
+        - in: path
+          name: receiptId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Report bundle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportBundleResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/reports/{receiptId}/evidence/{evidenceId}/link:
+    get:
+      summary: Create a short-lived evidence read link
+      parameters:
+        - in: path
+          name: receiptId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: evidenceId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Expiring evidence link
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EvidenceLinkResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthResponse:
@@ -176,17 +232,28 @@ components:
       required: [error]
       properties:
         error:
-          type: object
-          additionalProperties: false
-          required: [code, message]
-          properties:
-            code:
-              type: string
-            message:
-              type: string
-            details: {}
-            requestId:
-              type: string
+          $ref: "#/components/schemas/ErrorDetail"
+    ErrorDetail:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum:
+            - INVALID_REQUEST
+            - UNSAFE_TARGET
+            - COMPILATION_FAILED
+            - REQUEST_CONFLICT
+            - NOT_FOUND
+            - RATE_LIMITED
+            - EXECUTION_UNAVAILABLE
+            - INTERNAL_ERROR
+        message:
+          type: string
+        details: {}
+        requestId:
+          type: string
     VerifySummary:
       type: object
       additionalProperties: false
@@ -246,7 +313,7 @@ components:
         response:
           $ref: "#/components/schemas/VerifyResponse"
         error:
-          $ref: "#/components/schemas/ErrorResponse"
+          $ref: "#/components/schemas/ErrorDetail"
     ReceiptVerificationResponse:
       type: object
       additionalProperties: false
@@ -260,3 +327,42 @@ components:
           type: object
           additionalProperties:
             type: boolean
+    ReportBundleResponse:
+      type: object
+      additionalProperties: false
+      required: [receiptId, contract, verdict, summary, results, receipt, evidenceManifest, createdAt]
+      properties:
+        receiptId:
+          type: string
+        contract:
+          $ref: ./schemas/acceptance-contract.schema.json
+        verdict:
+          type: string
+        summary:
+          $ref: "#/components/schemas/VerifySummary"
+        results:
+          type: array
+          items:
+            type: object
+        receipt:
+          $ref: ./schemas/acceptance-receipt.schema.json
+        evidenceManifest:
+          $ref: ./schemas/evidence-manifest.schema.json
+        createdAt:
+          type: string
+          format: date-time
+    EvidenceLinkResponse:
+      type: object
+      additionalProperties: false
+      required: [receiptId, evidenceId, url, expiresAt]
+      properties:
+        receiptId:
+          type: string
+        evidenceId:
+          type: string
+        url:
+          type: string
+          format: uri
+        expiresAt:
+          type: string
+          format: date-time

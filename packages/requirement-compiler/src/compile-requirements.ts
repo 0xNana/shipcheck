@@ -94,7 +94,9 @@ export class RequirementCompilationError extends Error {
 export async function compileRequirements(
   input: unknown,
   options: RequirementCompilerOptions,
+  signal?: AbortSignal,
 ): Promise<CompiledAcceptanceContract> {
+  signal?.throwIfAborted();
   const request = VerifyRequestSchema.parse(input);
   const allowedIntents = CheckIntentSchema.options;
   const systemPrompt = buildCompilerPrompt(allowedIntents);
@@ -106,7 +108,9 @@ export async function compileRequirements(
     allowedIntents,
     responseSchema,
     isRepair: false,
+    ...(signal === undefined ? {} : { signal }),
   });
+  signal?.throwIfAborted();
   const firstValidation = validateCompilerOutput(
     firstOutput,
     request.brief,
@@ -125,7 +129,9 @@ export async function compileRequirements(
       responseSchema,
       isRepair: true,
       issues: firstValidation.issues,
+      ...(signal === undefined ? {} : { signal }),
     });
+    signal?.throwIfAborted();
     const repairedValidation = validateCompilerOutput(
       repairedOutput,
       request.brief,

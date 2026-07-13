@@ -73,3 +73,21 @@
 **Decision:** Deduplicate only candidates with equal normalized statements, classes, and executable intents. Resolve merged fields and final ordering through fixed locale-independent rules.
 
 **Reason:** Broader semantic similarity risks collapsing distinct obligations, while model-order-dependent merging would make contract hashes irreproducible.
+
+## ADR-014 — Unlisted report access
+
+**Decision:** Human-readable reports are served at unguessable receipt IDs on the same origin as the API. Report projections exclude full briefs and raw page content. Evidence is accessed through short-lived, membership-checked links.
+
+**Reason:** V1 has no authentication model, but reports may contain sensitive screenshots and requirement text derived from customer briefs.
+
+## ADR-015 — PostgreSQL-backed idempotency for V1
+
+**Decision:** Durable request, receipt, report, and idempotency state live in PostgreSQL. Redis is deferred because quick verification is synchronous and does not consume the queue interface in V1.
+
+**Reason:** Settlement finalization must survive process restarts and scale horizontally without double charging or lost receipts.
+
+## ADR-016 — Fly.io runtime with Tigris evidence
+
+**Decision:** Production ships as a single Fly.io app with Playwright Chromium, Fly Managed Postgres, and private Tigris object storage. Secrets are injected at runtime; workers never receive OKX credentials.
+
+**Reason:** Browser execution needs container isolation and sufficient CPU/memory; Fly provides co-located managed data services with minimal operational surface for the hackathon launch.

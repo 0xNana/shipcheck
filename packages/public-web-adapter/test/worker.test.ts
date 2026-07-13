@@ -48,6 +48,8 @@ describe("public-web worker", () => {
     expect(result.executionStatus).toBe("COMPLETED");
     expect(result.results).toHaveLength(checks.length);
     expect(result.results.every(({ status }) => status === "SATISFIED")).toBe(true);
+    expect(result.targetFingerprint.finalUrl).toBe(fixtures.url("/complete"));
+    expect(result.targetFingerprint.sha256).toMatch(/^[a-f0-9]{64}$/u);
     expect(result.contextClosed).toBe(true);
     expect(result.browserClosed).toBe(true);
   }, 15_000);

@@ -1,0 +1,42 @@
+{
+  "name": "@shipcheck/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/server.js",
+    "lint": "eslint src test",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@shipcheck/acceptance-policy": "workspace:*",
+    "@shipcheck/domain": "workspace:*",
+    "@shipcheck/evidence-store": "workspace:*",
+    "@shipcheck/evidence-tigris": "workspace:*",
+    "@shipcheck/execution-planner": "workspace:*",
+    "@shipcheck/okx-a2mcp": "workspace:*",
+    "@shipcheck/openai-compiler": "workspace:*",
+    "@shipcheck/public-web-adapter": "workspace:*",
+    "@shipcheck/requirement-compiler": "workspace:*",
+    "@shipcheck/service-core": "workspace:*",
+    "@shipcheck/service-ops": "workspace:*",
+    "@shipcheck/service-postgres": "workspace:*",
+    "@shipcheck/service-retention": "workspace:*",
+    "express": "^5.2.1",
+    "playwright-core": "^1.54.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/supertest": "^7.2.0",
+    "supertest": "^7.2.2"
+  }
+}

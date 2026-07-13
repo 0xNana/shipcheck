@@ -65,16 +65,14 @@ describe("browser evidence capture", () => {
     });
 
     try {
-      const [failure, success] = await Promise.all([
-        worker.executeWithEvidence(
-          { target: fixtures.url("/missing-pricing"), checks: [failingCheck] },
-          { artifactSink: sink, now: () => "2026-07-12T21:35:00Z", tempRoot },
-        ),
-        worker.executeWithEvidence(
-          { target: fixtures.url("/complete"), checks: [passingCheck] },
-          { artifactSink: sink, now: () => "2026-07-12T21:35:01Z", tempRoot },
-        ),
-      ]);
+      const failure = await worker.executeWithEvidence(
+        { target: fixtures.url("/missing-pricing"), checks: [failingCheck] },
+        { artifactSink: sink, now: () => "2026-07-12T21:35:00Z", tempRoot },
+      );
+      const success = await worker.executeWithEvidence(
+        { target: fixtures.url("/complete"), checks: [passingCheck] },
+        { artifactSink: sink, now: () => "2026-07-12T21:35:01Z", tempRoot },
+      );
 
       expect(failure.observations[0]).toMatchObject({ checkId: failingCheck.checkId, status: "OBSERVED_FALSE" });
       expect(failure.artifacts.map(({ type }) => type).sort()).toEqual(["SCREENSHOT", "TRACE"]);

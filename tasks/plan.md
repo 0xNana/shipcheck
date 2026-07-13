@@ -77,27 +77,27 @@ Build ShipCheck as a strict TypeScript monorepo that compiles delivery briefs in
 
 ### Phase 5: Service and Payment
 
-- [ ] Task 16: Implement storage/queue interfaces and local fakes.
-- [ ] Task 17: Implement typed API endpoints, idempotency, and structured errors.
-- [ ] Task 18: Integrate the current official OKX x402 middleware before billable logic.
+- [x] Task 16: Implement storage/queue interfaces and local fakes.
+- [x] Task 17: Implement typed API endpoints, idempotency, and structured errors.
+- [x] Task 18: Integrate the current official OKX x402 middleware before billable logic.
 
 ### Checkpoint: Paid Verification
 
-- [ ] Unpaid requests return `402` without compilation or browser work.
-- [ ] Paid replay is idempotent and produces a verifiable receipt.
-- [ ] The bounded quick flow works end to end.
+- [x] Unpaid requests return `402` without compilation or browser work.
+- [x] Paid replay is idempotent and produces a verifiable receipt.
+- [x] The bounded quick flow works end to end.
 
 ### Phase 6: Report, Operations, and Launch
 
-- [ ] Task 19: Implement the report and landing experience.
-- [ ] Task 20: Add metrics, safe logging, retention, health checks, and incident controls.
-- [ ] Task 21: Complete deployment, marketplace registration, and the production demo.
+- [x] Task 19: Implement the report and landing experience.
+- [x] Task 20: Add metrics, safe logging, retention, health checks, and incident controls.
+- [x] Task 21: Complete deployment, marketplace registration, and the production demo.
 
 ### Checkpoint: V1 Complete
 
-- [ ] All canonical, safety, payment, and end-to-end tests pass.
-- [ ] Documentation and ADRs match the shipped behavior.
-- [ ] Rollback and false-acceptance incident procedures are verified.
+- [x] All canonical, safety, payment, and end-to-end tests pass.
+- [x] Documentation and ADRs match the shipped behavior.
+- [x] Rollback and false-acceptance incident procedures are verified.
 
 ## Risks and Mitigations
 
@@ -112,5 +112,5 @@ Build ShipCheck as a strict TypeScript monorepo that compiles delivery briefs in
 
 ## Open Questions
 
-- The production LLM provider/model remains intentionally undecided until the compiler interface and mock contract tests are stable.
-- The concrete Postgres, Redis-compatible queue, and object-store providers remain deferred behind interfaces.
+- Production LLM model selection is environment-driven via `REQUIREMENT_COMPILER_MODEL` (OpenAI-compatible adapter shipped).
+- Fly Managed Postgres and Tigris are the chosen V1 providers; Redis queue remains deferred behind interfaces.
