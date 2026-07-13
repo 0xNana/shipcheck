@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -p tsconfig.app.json --noEmit && vite build",
+    "build:deps": "pnpm --filter @shipcheck/report-view... run build",
+    "build": "pnpm run build:deps && tsc -p tsconfig.app.json --noEmit && vite build",
     "preview": "vite preview",
     "lint": "eslint --ignore-pattern '**/*.d.ts' src test",
     "test": "vitest run",
