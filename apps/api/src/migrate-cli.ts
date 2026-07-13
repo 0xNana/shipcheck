@@ -1,4 +1,8 @@
+import { setDefaultResultOrder } from "node:dns";
+
 import { createPostgresPool, applyMigrations } from "@shipcheck/service-postgres";
+
+setDefaultResultOrder("ipv4first");
 
 function redactDatabaseUrl(value: string): string {
   try {
@@ -9,11 +13,28 @@ function redactDatabaseUrl(value: string): string {
   }
 }
 
+function assertRailwayReachableDatabaseUrl(value: string): void {
+  try {
+    const url = new URL(value.replace(/^postgres(ql)?:/iu, "http:"));
+    const host = url.hostname.toLowerCase();
+    if (host.startsWith("db.") && host.endsWith(".supabase.co")) {
+      throw new TypeError(
+        `DATABASE_URL uses Supabase direct host '${host}' which is IPv6-only; Railway cannot reach it (ENETUNREACH). Use the Session pooler URL (*.pooler.supabase.com:5432).`,
+      );
+    }
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes("Session pooler")) {
+      throw error;
+    }
+  }
+}
+
 async function main(): Promise<void> {
   const databaseUrl = process.env["DATABASE_URL"];
   if (databaseUrl === undefined || databaseUrl.length === 0) {
     throw new TypeError("DATABASE_URL is required for migrations");
   }
+  assertRailwayReachableDatabaseUrl(databaseUrl);
 
   console.log(
     JSON.stringify({
@@ -56,5 +77,5 @@ main().catch((error: unknown) => {
   if (error instanceof Error && error.stack !== undefined) {
     console.error(error.stack);
   }
-  process.exitCode = 1;
+  process.exit(1);
 });

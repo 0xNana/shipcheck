@@ -42,4 +42,4 @@ COPY --from=build --chown=shipcheck:shipcheck /app/developer-docs/config ./devel
 USER shipcheck
 WORKDIR /app/apps/api
 EXPOSE 3000
-CMD ["node", "dist/server.js"]
+CMD ["node", "dist/entry.js"]
