@@ -1,9 +1,42 @@
+# Dependencies and builds
 node_modules/
+.pnpm-store/
 dist/
+build/
 coverage/
+*.tsbuildinfo
+
+# Environment and secrets
 .env
 .env.*
 !.env.example
+!.env*.example
 *.pem
+*.key
+credentials.json
+
+# Logs and local runtime
 *.log
+logs/
+tmp/
+temp/
+.cache/
+.vite/
+playwright-report/
+test-results/
+blob-report/
+
+# Editors and OS
 .DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Fly / deployment local state
+.fly/
+
+# Agent / tool scratch
+.cursor/
+agent-transcripts/
