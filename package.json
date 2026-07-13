@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "pnpm --recursive build",
+    "build:web:vercel": "pnpm --filter @shipcheck/web... build && node scripts/prepare-vercel-out.mjs",
     "lint": "pnpm build && pnpm --recursive lint",
     "test": "pnpm build && pnpm --recursive test",
     "typecheck": "pnpm build && pnpm --recursive typecheck"

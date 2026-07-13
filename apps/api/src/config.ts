@@ -10,29 +10,43 @@ const eip155Pattern = /^eip155:\d+$/u;
 const positiveInt = z.coerce.number().int().positive();
 const nonEmptyString = z.string().trim().min(1);
 
+/** Railway often sets optional secrets to "" — treat blank as unset. */
+function emptyToUndefined(value: unknown): unknown {
+  if (typeof value !== "string") {
+    return value;
+  }
+  return value.trim().length === 0 ? undefined : value;
+}
+
+const optionalNonEmptyString = z.preprocess(
+  emptyToUndefined,
+  nonEmptyString.optional(),
+);
+const optionalUrl = z.preprocess(emptyToUndefined, z.url().optional());
+
 const EnvSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     PORT: positiveInt.default(3000),
     PUBLIC_BASE_URL: z.url(),
-    METRICS_BEARER_TOKEN: nonEmptyString.optional(),
+    METRICS_BEARER_TOKEN: optionalNonEmptyString,
     VERIFICATION_ENABLED: z.string().optional(),
     BROWSER_EXECUTION_ENABLED: z.string().optional(),
     OPENAI_API_KEY: nonEmptyString,
-    OPENAI_BASE_URL: z.url().optional(),
+    OPENAI_BASE_URL: optionalUrl,
     REQUIREMENT_COMPILER_MODEL: nonEmptyString,
     DATABASE_URL: nonEmptyString,
-    REDIS_URL: z.string().optional(),
-    TIGRIS_STORAGE_ENDPOINT: z.url().optional(),
-    TIGRIS_STORAGE_ACCESS_KEY_ID: z.string().optional(),
-    TIGRIS_STORAGE_SECRET_ACCESS_KEY: z.string().optional(),
-    TIGRIS_STORAGE_BUCKET: z.string().optional(),
-    TIGRIS_STORAGE_REGION: z.string().optional(),
-    AWS_ENDPOINT_URL_S3: z.url().optional(),
-    AWS_ACCESS_KEY_ID: z.string().optional(),
-    AWS_SECRET_ACCESS_KEY: z.string().optional(),
-    AWS_REGION: z.string().optional(),
-    BUCKET_NAME: z.string().optional(),
+    REDIS_URL: z.preprocess(emptyToUndefined, z.string().optional()),
+    TIGRIS_STORAGE_ENDPOINT: optionalUrl,
+    TIGRIS_STORAGE_ACCESS_KEY_ID: optionalNonEmptyString,
+    TIGRIS_STORAGE_SECRET_ACCESS_KEY: optionalNonEmptyString,
+    TIGRIS_STORAGE_BUCKET: optionalNonEmptyString,
+    TIGRIS_STORAGE_REGION: optionalNonEmptyString,
+    AWS_ENDPOINT_URL_S3: optionalUrl,
+    AWS_ACCESS_KEY_ID: optionalNonEmptyString,
+    AWS_SECRET_ACCESS_KEY: optionalNonEmptyString,
+    AWS_REGION: optionalNonEmptyString,
+    BUCKET_NAME: optionalNonEmptyString,
     EVIDENCE_RETENTION_DAYS: positiveInt.default(7),
     REQUEST_RETENTION_DAYS: positiveInt.default(30),
     RECEIPT_RETENTION_DAYS: positiveInt.default(30),
@@ -47,7 +61,7 @@ const EnvSchema = z
     MAX_RUN_SECONDS: positiveInt.default(90),
     MAX_EVIDENCE_BYTES: positiveInt.default(25_000_000),
     ALLOW_FREE_TEST_ROUTE: z.string().optional(),
-    PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: nonEmptyString.optional(),
+    PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: optionalNonEmptyString,
   })
   .superRefine((env, context) => {
     if (Number(env.SHIPCHECK_PRICE.slice(1)) <= 0) {

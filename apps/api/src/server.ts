@@ -63,17 +63,17 @@ async function loadJsonConfig<T>(
   return schema.parse(JSON.parse(raw));
 }
 
+const DEFAULT_CHROMIUM_EXECUTABLE = "/usr/local/bin/shipcheck-chromium";
+
 function resolveChromiumExecutable(config: ReturnType<typeof loadApiConfig>): string {
   if (config.playwrightChromiumExecutablePath !== undefined) {
     return config.playwrightChromiumExecutablePath;
   }
-  const fromEnv = process.env["PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH"];
+  const fromEnv = process.env["PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH"]?.trim();
   if (fromEnv !== undefined && fromEnv.length > 0) {
     return fromEnv;
   }
-  throw new TypeError(
-    "PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH is required for browser execution",
-  );
+  return DEFAULT_CHROMIUM_EXECUTABLE;
 }
 
 function listen(app: express.Express, port: number): Promise<Server> {

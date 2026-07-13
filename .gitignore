@@ -36,6 +36,8 @@ Thumbs.db
 
 # Railway / deployment local state
 .railway/
+.vercel/
+vercel-out/
 
 # Agent / tool scratch
 .cursor/
