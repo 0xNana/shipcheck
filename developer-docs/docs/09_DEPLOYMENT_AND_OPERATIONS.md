@@ -41,6 +41,7 @@ Production deploys as one Railway service from the root `Dockerfile` ([config as
 - Healthcheck: `GET /health/live`
 - Bind: process listens on `0.0.0.0:$PORT`
 - Data: Supabase Postgres (`DATABASE_URL`) + S3-compatible evidence credentials (`TIGRIS_STORAGE_*` or `AWS_*`)
+- TLS: Supabase hosts auto-enable SSL in `createPostgresPool` (override with `DATABASE_SSLMODE` / `DATABASE_CA_CERT`)
 - Size: allocate enough memory for Playwright Chromium (≈4 GB)
 
 Set `PUBLIC_BASE_URL` to the Railway HTTPS origin (custom domain or `*.up.railway.app`).
