@@ -7,7 +7,9 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-preDeployCommand = ["node /app/apps/api/dist/migrate-cli.js"]
+# Runs in a separate container from the built image (same env vars; no volumes).
+# WORKDIR is /app/apps/api — see Dockerfile.
+preDeployCommand = ["node dist/migrate-cli.js"]
 healthcheckPath = "/health/live"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
