@@ -70,6 +70,18 @@ describe("createOkxPaymentMiddleware", () => {
       expect.anything(),
       undefined,
       undefined,
+      false,
+    );
+  });
+
+  it("can sync facilitator on start when explicitly enabled", () => {
+    createOkxPaymentMiddleware({ ...config, syncFacilitatorOnStart: true });
+
+    expect(sdk.middleware).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      undefined,
+      undefined,
       true,
     );
   });

@@ -33,6 +33,7 @@ import {
 import {
   createShipCheckMetrics,
   createStructuredLogger,
+  parseBooleanEnv,
 } from "@shipcheck/service-ops";
 import type { VerifyResponse } from "@shipcheck/service-core";
 import express from "express";
@@ -204,6 +205,10 @@ export async function startProductionServer(
         network: config.x402Network,
         payTo: config.payToAddress,
         price: config.shipcheckPrice,
+        syncFacilitatorOnStart: parseBooleanEnv(
+          env["OKX_SYNC_FACILITATOR_ON_START"],
+          false,
+        ),
       },
     );
 

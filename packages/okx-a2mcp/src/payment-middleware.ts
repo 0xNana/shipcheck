@@ -80,6 +80,6 @@ export function createOkxPaymentMiddleware(
     resourceServer,
     undefined,
     undefined,
-    config.syncFacilitatorOnStart ?? true,
+    config.syncFacilitatorOnStart ?? false,
   );
 }
