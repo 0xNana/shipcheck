@@ -14,8 +14,9 @@ RUN pnpm install --frozen-lockfile
 FROM deps AS build
 COPY apps ./apps
 COPY developer-docs/config ./developer-docs/config
-RUN pnpm --filter @shipcheck/web build
-RUN pnpm --filter @shipcheck/api build
+# `...` includes workspace dependencies so package `dist/` exists before consumers typecheck.
+RUN pnpm --filter @shipcheck/web... build
+RUN pnpm --filter @shipcheck/api... build
 
 FROM mcr.microsoft.com/playwright:v1.54.1-noble AS runtime
 WORKDIR /app
