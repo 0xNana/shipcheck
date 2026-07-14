@@ -1,7 +1,0 @@
-{
-  "brief": "Build a responsive launch page with pricing, FAQ, documentation and a working waitlist form. The design should feel modern.",
-  "deliveryUrl": "https://example.com",
-  "mode": "quick",
-  "maxRequirements": 12,
-  "idempotencyKey": "demo-landing-page-001"
-}

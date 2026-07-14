@@ -42,3 +42,6 @@ vercel-out/
 # Agent / tool scratch
 .cursor/
 agent-transcripts/
+
+# Internal working docs 
+internal-docs/
