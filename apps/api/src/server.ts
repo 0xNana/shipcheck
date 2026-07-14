@@ -58,7 +58,7 @@ async function loadJsonConfig<T>(
 ): Promise<T> {
   const configDir = join(
     dirname(fileURLToPath(import.meta.url)),
-    "../../../developer-docs/config",
+    "../../../config",
   );
   const raw = await readFile(join(configDir, fileName), "utf8");
   return schema.parse(JSON.parse(raw));

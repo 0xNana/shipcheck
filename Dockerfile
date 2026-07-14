@@ -13,7 +13,7 @@ RUN pnpm install --frozen-lockfile
 
 FROM deps AS build
 COPY apps ./apps
-COPY developer-docs/config ./developer-docs/config
+COPY config ./config
 # `...` includes workspace dependencies so package `dist/` exists before consumers typecheck.
 RUN pnpm --filter @shipcheck/web... build
 RUN pnpm --filter @shipcheck/api... build
@@ -37,7 +37,7 @@ COPY --from=build --chown=shipcheck:shipcheck /app/apps/api/dist ./apps/api/dist
 COPY --from=build --chown=shipcheck:shipcheck /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build --chown=shipcheck:shipcheck /app/apps/web/dist ./apps/web/dist
 COPY --from=build --chown=shipcheck:shipcheck /app/packages ./packages
-COPY --from=build --chown=shipcheck:shipcheck /app/developer-docs/config ./developer-docs/config
+COPY --from=build --chown=shipcheck:shipcheck /app/config ./config
 
 USER shipcheck
 WORKDIR /app/apps/api

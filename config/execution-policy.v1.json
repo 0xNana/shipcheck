@@ -1,0 +1,36 @@
+{
+  "policyVersion": "shipcheck-public-web-v1.0.0",
+  "allowedSchemes": [
+    "https"
+  ],
+  "allowedPorts": [
+    443
+  ],
+  "maxRedirects": 5,
+  "maxPages": 3,
+  "maxPopups": 1,
+  "desktopViewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "mobileViewport": {
+    "width": 375,
+    "height": 812
+  },
+  "maxRequirements": 12,
+  "maxExecutableRequirementsQuick": 8,
+  "blockedActionClasses": [
+    "AUTHENTICATION",
+    "PAYMENT",
+    "WALLET",
+    "DESTRUCTIVE",
+    "FILE_UPLOAD",
+    "PERMISSION_GRANT",
+    "DOWNLOAD_EXECUTABLE"
+  ],
+  "captureTraceOn": [
+    "FAIL",
+    "EXECUTION_ERROR"
+  ],
+  "sameOriginNetworkFailureThreshold": 400
+}
