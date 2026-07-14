@@ -26,11 +26,16 @@ FIXTURE_ORIGIN="$(rg -o 'https?://127.0.0.1:[0-9]+' /tmp/shipcheck-fixtures.log 
 DELIVERY_URL="${FIXTURE_ORIGIN}/demo"
 
 echo "Starting API on port ${PORT}"
+if [[ -z "${OPENAI_API_KEY:-}" ]]; then
+  echo "ERROR: export OPENAI_API_KEY before running the demo compile step." >&2
+  exit 1
+fi
 PORT="${PORT}" \
 PUBLIC_BASE_URL="${BASE_URL}" \
 VERIFICATION_ENABLED=true \
 BROWSER_EXECUTION_ENABLED=true \
 ALLOW_FREE_TEST_ROUTE=true \
+OKX_SYNC_FACILITATOR_ON_START=false \
 DATABASE_URL="${DATABASE_URL:-postgresql://shipcheck:shipcheck@127.0.0.1:5432/shipcheck}" \
 TIGRIS_STORAGE_ENDPOINT="${TIGRIS_STORAGE_ENDPOINT:-http://127.0.0.1:9000}" \
 TIGRIS_STORAGE_BUCKET="${TIGRIS_STORAGE_BUCKET:-shipcheck}" \

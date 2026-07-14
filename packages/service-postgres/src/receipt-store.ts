@@ -1,7 +1,7 @@
 import type { AcceptanceReceipt } from "@shipcheck/domain";
 import type { ReceiptStore } from "@shipcheck/service-core";
 
-import { queryRows, type Queryable } from "./client.js";
+import { queryRows, toJsonb, type Queryable } from "./client.js";
 
 interface ReceiptRow {
   readonly receipt_id: string;
@@ -20,7 +20,7 @@ export class PostgresReceiptStore implements ReceiptStore {
           receipt = EXCLUDED.receipt,
           tested_at = EXCLUDED.tested_at
       `,
-      [receipt.receiptId, receipt, receipt.testedAt],
+      [receipt.receiptId, toJsonb(receipt), receipt.testedAt],
     );
   }
 

@@ -29,6 +29,7 @@ import express, {
   type RequestHandler,
 } from "express";
 import { ZodError } from "zod";
+import { RequirementCompilationError } from "@shipcheck/requirement-compiler";
 import {
   createHealthHandlers,
   createMetricsAuthMiddleware,
@@ -603,6 +604,17 @@ export function createApiApp(options: ApiAppOptions): Express {
         mapped.code,
         mapped.message,
         mapped.details,
+        response.locals["requestId"] as string | undefined,
+      );
+      return;
+    }
+    if (error instanceof RequirementCompilationError) {
+      sendError(
+        response,
+        422,
+        "COMPILATION_FAILED",
+        error.message,
+        { issues: error.issues },
         response.locals["requestId"] as string | undefined,
       );
       return;

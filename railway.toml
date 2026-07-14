@@ -9,7 +9,7 @@ dockerfilePath = "Dockerfile"
 [deploy]
 # Runs in a separate container from the built image (same env vars; no volumes).
 # WORKDIR is /app/apps/api — see Dockerfile.
-preDeployCommand = ["node dist/migrate-cli.js"]
+preDeployCommand = ["node dist/migrate-cli.js", "node dist/seed-demo-cli.js"]
 # Must listen on $PORT before heavy boot; do not use dist/server.js here.
 startCommand = "node dist/entry.js"
 healthcheckPath = "/health/live"

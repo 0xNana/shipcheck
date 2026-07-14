@@ -6,7 +6,7 @@ import type {
 } from "@shipcheck/domain";
 import type { ReportBundle, ReportStore } from "@shipcheck/service-core";
 
-import { queryRows, type Queryable } from "./client.js";
+import { queryRows, toJsonb, type Queryable } from "./client.js";
 
 interface ReportBundleRow {
   readonly receipt_id: string;
@@ -52,10 +52,10 @@ export class PostgresReportStore implements ReportStore {
       `,
       [
         bundle.receiptId,
-        bundle.contract,
-        bundle.results,
-        bundle.receipt,
-        bundle.evidenceManifest,
+        toJsonb(bundle.contract),
+        toJsonb(bundle.results),
+        toJsonb(bundle.receipt),
+        toJsonb(bundle.evidenceManifest),
         bundle.createdAt,
       ],
     );

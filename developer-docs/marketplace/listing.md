@@ -53,6 +53,8 @@ ShipCheck turns a plain-language delivery brief into machine-verifiable acceptan
 - [ ] Confirm unpaid `POST /v1/verify` returns `402`
 - [ ] Confirm paid replay returns `Idempotency-Replayed: true`
 - [ ] Attach sample receipt URL and report URL to the listing
+  - Report UI: `https://shipcheck-web.vercel.app/reports/demo` (or Railway SPA: `https://shipcheck.up.railway.app/reports/demo`)
+  - API bundle: `GET https://shipcheck.up.railway.app/v1/reports/demo` (seeded on deploy via `seed-demo-cli.js`)
 
 ## Support statement
 

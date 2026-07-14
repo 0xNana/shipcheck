@@ -205,6 +205,50 @@ export function describeReportStoreContract(
       await store.delete(bundle.receiptId);
       expect(await store.get(bundle.receiptId)).toBeUndefined();
     });
+
+    it("persists non-empty requirement results arrays", async () => {
+      const store = createStore();
+      const bundle = sampleReportBundle("sc_receipt_with_results");
+      const withResults = {
+        ...bundle,
+        results: [
+          {
+            requirementId: "req_pricing",
+            priority: "REQUIRED" as const,
+            status: "FAIL" as const,
+            checkIds: ["check_1"],
+            observationIds: ["obs_1"],
+            evidenceIds: ["ev_1"],
+            expected: "Pricing section present.",
+            observed: "No pricing section found.",
+            repairHint: "Add pricing.",
+            rerunEligible: true,
+          },
+        ],
+        receipt: {
+          ...bundle.receipt,
+          receiptId: "sc_receipt_with_results",
+          results: [
+            {
+              requirementId: "req_pricing",
+              priority: "REQUIRED" as const,
+              status: "FAIL" as const,
+              checkIds: ["check_1"],
+              observationIds: ["obs_1"],
+              evidenceIds: ["ev_1"],
+              expected: "Pricing section present.",
+              observed: "No pricing section found.",
+              repairHint: "Add pricing.",
+              rerunEligible: true,
+            },
+          ],
+        },
+      };
+
+      await store.put(withResults);
+
+      expect(await store.get(withResults.receiptId)).toEqual(withResults);
+    });
   });
 }
 
