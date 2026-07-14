@@ -37,7 +37,7 @@ Never place OKX API secrets in browser workers.
 Production deploys as one Railway service from the root `Dockerfile` ([config as code](https://docs.railway.com/config-as-code/reference)).
 
 - Builder: `DOCKERFILE` via [`railway.toml`](../../railway.toml)
-- Pre-deploy: `node /app/apps/api/dist/migrate-cli.js` ([pre-deploy command](https://docs.railway.com/deployments/pre-deploy-command))
+- Pre-deploy: `node dist/migrate-cli.js && node dist/seed-demo-cli.js` ([pre-deploy command](https://docs.railway.com/deployments/pre-deploy-command); Railway allows one command string)
 - Healthcheck: `GET /health/live`
 - Bind: process listens on `0.0.0.0:$PORT`
 - Data: Supabase Postgres (`DATABASE_URL`) + S3-compatible evidence credentials (`TIGRIS_STORAGE_*` or `AWS_*`)
