@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import { axe } from "vitest-axe";
@@ -23,11 +24,10 @@ describe("LandingPage", () => {
     expect(
       screen.getByRole("heading", { name: "How to run a verify" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Production")).toBeInTheDocument();
-    expect(screen.getByLabelText(/Brief/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Delivery URL/i)).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Agent prompt" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "curl" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /How to run a verify/i }),
+    ).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByLabelText(/Brief/i)).not.toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Bounded public-web scope" }),
     ).toBeInTheDocument();
@@ -45,6 +45,27 @@ describe("LandingPage", () => {
         name: "Verify a delivery — open the demo acceptance report",
       }),
     ).toHaveAttribute("href", "/reports/demo");
+  });
+
+  it("expands and collapses the how-to panel on toggle", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <LandingPage />
+      </MemoryRouter>,
+    );
+
+    const toggle = screen.getByRole("button", { name: /How to run a verify/i });
+    await user.click(toggle);
+
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByLabelText(/Brief/i)).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Agent prompt" })).toBeInTheDocument();
+
+    await user.click(toggle);
+
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByLabelText(/Brief/i)).not.toBeInTheDocument();
   });
 
   it("has no serious accessibility violations on the landing page", async () => {

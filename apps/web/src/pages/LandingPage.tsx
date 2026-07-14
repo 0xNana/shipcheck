@@ -1,3 +1,4 @@
+import { useEffect, useId, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { SiteFooter } from "../components/SiteFooter.js";
@@ -39,7 +40,41 @@ const OUT_OF_SCOPE = [
   "Aesthetic judgment and native mobile apps",
 ] as const;
 
+function howtoHashOpen(): boolean {
+  return typeof window !== "undefined" && window.location.hash === "#howto";
+}
+
 export function LandingPage() {
+  const howtoPanelId = useId();
+  const [howtoOpen, setHowtoOpen] = useState(howtoHashOpen);
+
+  useEffect(() => {
+    function openFromHash(): void {
+      if (window.location.hash === "#howto") {
+        setHowtoOpen(true);
+      }
+    }
+
+    function openFromHowtoLink(event: MouseEvent): void {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+      const link = target.closest('a[href="#howto"]');
+      if (link !== null) {
+        setHowtoOpen(true);
+      }
+    }
+
+    openFromHash();
+    window.addEventListener("hashchange", openFromHash);
+    document.addEventListener("click", openFromHowtoLink);
+    return () => {
+      window.removeEventListener("hashchange", openFromHash);
+      document.removeEventListener("click", openFromHowtoLink);
+    };
+  }, []);
+
   return (
     <div className="shell">
       <header className="topbar">
@@ -103,16 +138,37 @@ export function LandingPage() {
         <section
           id="howto"
           aria-labelledby="howto-heading"
-          className="landing__section"
+          className={
+            howtoOpen
+              ? "landing__section howto-section howto-section--open"
+              : "landing__section howto-section"
+          }
         >
-          <div className="section-head">
-            <h2 id="howto-heading">How to run a verify</h2>
-            <p>
-              Fill the form — it builds a live agent prompt or curl for you.
-              Copy, paste, pay on 402, then open the report.
-            </p>
-          </div>
-          <VerifyHowto />
+          <button
+            type="button"
+            className="howto-toggle"
+            aria-expanded={howtoOpen}
+            aria-controls={howtoPanelId}
+            onClick={() => {
+              setHowtoOpen((current) => !current);
+            }}
+          >
+            <span className="howto-toggle__copy">
+              <h2 id="howto-heading">How to run a verify</h2>
+              <p>
+                Fill the form — it builds a live agent prompt or curl for you.
+                Copy, paste, pay on 402, then open the report.
+              </p>
+            </span>
+            <span className="howto-toggle__icon" aria-hidden="true">
+              {howtoOpen ? "−" : "+"}
+            </span>
+          </button>
+          {howtoOpen ? (
+            <div id={howtoPanelId} className="howto-panel">
+              <VerifyHowto />
+            </div>
+          ) : null}
         </section>
 
         <section

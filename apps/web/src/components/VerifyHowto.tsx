@@ -337,12 +337,6 @@ export function VerifyHowto() {
           </div>
         </li>
       </ol>
-
-      <p className="howto-note">
-        Optional: <code>POST /v1/compile</code> builds a contract without
-        paying or running the browser. Full OpenAPI lives in the repo at{" "}
-        <code>docs/openapi.yaml</code>.
-      </p>
     </div>
   );
 }

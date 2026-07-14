@@ -553,16 +553,81 @@ pre {
   font-size: 0.96rem;
 }
 
-.howto-note {
-  margin: 1rem 0 0;
-  max-width: 44rem;
-  color: var(--muted);
-  font-size: 0.92rem;
+.howto-toggle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: start;
+  width: 100%;
+  margin: 0;
+  padding: 0.35rem 0 0.85rem;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 160ms ease;
 }
 
-.howto-note code {
-  font-size: 0.86rem;
-  color: var(--ink);
+.howto-toggle:hover,
+.howto-toggle:focus-visible {
+  border-bottom-color: color-mix(in srgb, var(--ink) 28%, transparent);
+}
+
+.howto-toggle:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 4px;
+}
+
+.howto-toggle__copy {
+  display: grid;
+  gap: 0.45rem;
+  max-width: 40rem;
+}
+
+.howto-toggle__copy h2 {
+  margin: 0;
+}
+
+.howto-toggle__copy p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.howto-toggle__icon {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  margin-top: 0.15rem;
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  color: var(--accent-ink);
+  font-size: 1.15rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.howto-section--open .howto-toggle {
+  margin-bottom: 1.35rem;
+}
+
+.howto-panel {
+  animation: howto-open 220ms ease both;
+}
+
+@keyframes howto-open {
+  from {
+    opacity: 0;
+    transform: translateY(-0.35rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 40rem) {
