@@ -47,6 +47,8 @@ Production deploys as one Railway service from the root `Dockerfile` ([config as
 
 Set `PUBLIC_BASE_URL` to the Railway HTTPS origin (custom domain or `*.up.railway.app`).
 
+When the landing runs on Vercel and the API on Railway, set `CORS_ALLOWED_ORIGINS` on the API to a comma-separated list of browser origins (for example `https://shipcheck-web.vercel.app`). The Railway-hosted SPA origin can be included if you serve reports from the same API host.
+
 ## Health
 
 - `GET /health` — backward-compatible `{ "status": "ok" }`;

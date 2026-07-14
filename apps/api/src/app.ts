@@ -32,6 +32,7 @@ import { ZodError } from "zod";
 import { RequirementCompilationError } from "@shipcheck/requirement-compiler";
 import {
   createHealthHandlers,
+  createCorsMiddleware,
   createMetricsAuthMiddleware,
   createRequestTelemetryMiddleware,
   renderMetrics,
@@ -71,6 +72,7 @@ export interface ApiAppOptions {
   };
   readonly metricsBearerToken?: string;
   readonly health?: HealthHandlerOptions;
+  readonly corsAllowedOrigins?: readonly string[];
 }
 
 export class ServiceError extends Error {
@@ -188,6 +190,9 @@ function sendError(
 export function createApiApp(options: ApiAppOptions): Express {
   const app = express();
   app.disable("x-powered-by");
+  if (options.corsAllowedOrigins !== undefined && options.corsAllowedOrigins.length > 0) {
+    app.use(createCorsMiddleware(options.corsAllowedOrigins));
+  }
   if (options.telemetry !== undefined) {
     app.use(
       createRequestTelemetryMiddleware({

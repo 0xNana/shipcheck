@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { resolveTigrisStorageEnv } from "@shipcheck/evidence-tigris";
-import { incidentGatesFromEnv, parseBooleanEnv } from "@shipcheck/service-ops";
+import { incidentGatesFromEnv, parseBooleanEnv, parseCorsAllowedOrigins } from "@shipcheck/service-ops";
 
 const usdPricePattern = /^\$(?:0|[1-9]\d*)(?:\.\d{1,6})?$/u;
 const evmAddressPattern = /^0x[a-fA-F0-9]{40}$/u;
@@ -29,6 +29,7 @@ const EnvSchema = z
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     PORT: positiveInt.default(3000),
     PUBLIC_BASE_URL: z.url(),
+    CORS_ALLOWED_ORIGINS: z.preprocess(emptyToUndefined, z.string().optional()),
     METRICS_BEARER_TOKEN: optionalNonEmptyString,
     VERIFICATION_ENABLED: z.string().optional(),
     BROWSER_EXECUTION_ENABLED: z.string().optional(),
@@ -92,6 +93,7 @@ export type ApiConfig = {
   readonly nodeEnv: "development" | "test" | "production";
   readonly port: number;
   readonly publicBaseUrl: string;
+  readonly corsAllowedOrigins: readonly string[];
   readonly metricsBearerToken?: string;
   readonly verificationEnabled: boolean;
   readonly browserExecutionEnabled: boolean;
@@ -145,6 +147,7 @@ export function loadApiConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
     nodeEnv: parsed.NODE_ENV,
     port: parsed.PORT,
     publicBaseUrl: parsed.PUBLIC_BASE_URL,
+    corsAllowedOrigins: parseCorsAllowedOrigins(parsed.CORS_ALLOWED_ORIGINS),
     ...(parsed.METRICS_BEARER_TOKEN === undefined
       ? {}
       : { metricsBearerToken: parsed.METRICS_BEARER_TOKEN }),

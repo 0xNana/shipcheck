@@ -13,8 +13,10 @@ export {
   type ShipCheckMetricsOptions,
 } from "./metrics.js";
 export {
+  createCorsMiddleware,
   createMetricsAuthMiddleware,
   createRequestTelemetryMiddleware,
+  parseCorsAllowedOrigins,
   type RequestTelemetryOptions,
 } from "./middleware.js";
 export {

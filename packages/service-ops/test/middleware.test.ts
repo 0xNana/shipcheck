@@ -3,11 +3,13 @@ import request from "supertest";
 import { describe, expect, it } from "vitest";
 
 import {
+  createCorsMiddleware,
   createHealthHandlers,
   createMetricsAuthMiddleware,
   createRequestTelemetryMiddleware,
   createShipCheckMetrics,
   createStructuredLogger,
+  parseCorsAllowedOrigins,
   renderMetrics,
 } from "../src/index.js";
 
@@ -62,6 +64,46 @@ describe("health handlers", () => {
         checks: { config: true, postgres: false },
       },
     });
+  });
+});
+
+describe("cors middleware", () => {
+  it("parses comma-separated allowed origins", () => {
+    expect(
+      parseCorsAllowedOrigins(
+        "https://shipcheck-web.vercel.app, https://shipcheck.up.railway.app",
+      ),
+    ).toEqual([
+      "https://shipcheck-web.vercel.app",
+      "https://shipcheck.up.railway.app",
+    ]);
+  });
+
+  it("reflects allowed origins and handles preflight", async () => {
+    const app = express();
+    app.use(
+      createCorsMiddleware(["https://shipcheck-web.vercel.app"]),
+    );
+    app.get("/v1/reports/demo", (_request, response) => {
+      response.json({ ok: true });
+    });
+
+    await expect(
+      request(app)
+        .get("/v1/reports/demo")
+        .set("Origin", "https://shipcheck-web.vercel.app"),
+    ).resolves.toMatchObject({
+      status: 200,
+      headers: {
+        "access-control-allow-origin": "https://shipcheck-web.vercel.app",
+      },
+    });
+
+    await expect(
+      request(app)
+        .options("/v1/reports/demo")
+        .set("Origin", "https://shipcheck-web.vercel.app"),
+    ).resolves.toMatchObject({ status: 204 });
   });
 });
 

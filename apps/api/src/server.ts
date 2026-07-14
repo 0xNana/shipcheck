@@ -184,6 +184,7 @@ export async function startProductionServer(
         createRequestId: () => `req_${randomUUID().replace(/-/gu, "")}`,
         now: () => new Date().toISOString(),
         verificationEnabled: config.verificationEnabled,
+        corsAllowedOrigins: config.corsAllowedOrigins,
         telemetry: { logger, metrics },
         ...(config.metricsBearerToken === undefined
           ? {}

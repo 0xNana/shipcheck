@@ -82,3 +82,52 @@ export function createMetricsAuthMiddleware(
     next();
   };
 }
+
+const originPattern = /^https?:\/\/[^\s/]+(?::\d+)?$/u;
+
+export function parseCorsAllowedOrigins(value: string | undefined): readonly string[] {
+  if (value === undefined || value.trim().length === 0) {
+    return [];
+  }
+  return value
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
+}
+
+export function createCorsMiddleware(
+  allowedOrigins: readonly string[],
+): RequestHandler {
+  const allowed = new Set(
+    allowedOrigins.filter((origin) => originPattern.test(origin)),
+  );
+
+  return (request, response, next) => {
+    if (allowed.size === 0) {
+      next();
+      return;
+    }
+
+    const origin = request.get("Origin");
+    if (origin !== undefined && allowed.has(origin)) {
+      response.setHeader("Access-Control-Allow-Origin", origin);
+      response.setHeader("Vary", "Origin");
+      response.setHeader(
+        "Access-Control-Allow-Methods",
+        "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      );
+      response.setHeader(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization, Idempotency-Key, payment-signature, x-payment",
+      );
+      response.setHeader("Access-Control-Max-Age", "86400");
+    }
+
+    if (request.method === "OPTIONS") {
+      response.sendStatus(origin !== undefined && allowed.has(origin) ? 204 : 403);
+      return;
+    }
+
+    next();
+  };
+}
