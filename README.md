@@ -6,6 +6,17 @@ ShipCheck is an independent acceptance service for agent-built software. It comp
 
 The language model may extract and classify requirements. It never awards the final verdict.
 
+## Production
+
+| Surface | URL |
+|---|---|
+| API | https://shipcheck.up.railway.app |
+| Landing / reports | https://shipcheck-web.vercel.app |
+| Demo report | https://shipcheck-web.vercel.app/reports/demo |
+| Health | https://shipcheck.up.railway.app/health/live |
+
+Unpaid `POST /v1/verify` returns **HTTP 402** with an OKX x402 `payment-required` challenge before any compile or browser work runs.
+
 ## Repository layout
 
 ```text
@@ -13,23 +24,12 @@ apps/
   api/              Express API, x402 payment boundary, production server
   web/              Landing page and unlisted report UI
   fixture-sites/    Deterministic demo and hostile fixtures
-packages/
-  domain/           Schema-backed contracts and hashing
-  acceptance-policy/
-  requirement-compiler/
-  execution-planner/
-  public-web-adapter/
-  evidence-store/
-  evidence-tigris/
-  service-core/
-  service-postgres/
-  service-ops/
-  service-retention/
-  okx-a2mcp/
-  openai-compiler/
-  report-view/
-developer-docs/     Product specs, OpenAPI, ADRs, marketplace listing
+packages/           Domain, compiler, planner, adapters, stores, OKX/OpenAI
+config/             Runtime acceptance + execution policy JSON (shipped in the image)
+docs/               Specs, OpenAPI, ADRs, security, operations
 scripts/            Demo and deployment verification helpers
+Dockerfile          Railway production image (Playwright Chromium)
+railway.toml        Build / pre-deploy migrate+seed / healthcheck
 ```
 
 ## Requirements
@@ -65,6 +65,7 @@ pnpm --filter @shipcheck/web dev
 Fixture sites for adapter tests and demos:
 
 ```bash
+pnpm --filter @shipcheck/fixture-sites build
 pnpm --filter @shipcheck/fixture-sites start
 ```
 
@@ -81,47 +82,61 @@ pnpm --filter @shipcheck/fixture-sites start
 | `GET` | `/v1/reports/:receiptId` | Unlisted human report bundle |
 | `GET` | `/metrics` | Prometheus metrics (bearer token) |
 
-Unpaid `/v1/verify` calls return `HTTP 402`. Reports are unlisted by unguessable receipt ID and omit full briefs and raw page content. Evidence uses short-lived signed links.
+Reports are unlisted by unguessable receipt ID and omit full briefs and raw page content. Evidence uses short-lived signed links.
 
-OpenAPI: [`developer-docs/openapi.yaml`](developer-docs/openapi.yaml)
+OpenAPI: [`docs/openapi.yaml`](docs/openapi.yaml)
 
 ## Configuration
 
 Copy [`.env.example`](.env.example). Important variables:
 
-- `PUBLIC_BASE_URL` — origin used for `reportUrl`
-- `DATABASE_URL` — PostgreSQL (e.g. Supabase)
-- `TIGRIS_STORAGE_*` — S3-compatible evidence storage (`AWS_*` + `BUCKET_NAME` also accepted; bucket defaults to `shipcheck`)
-- `OPENAI_API_KEY` / `REQUIREMENT_COMPILER_MODEL` — compiler model
-- `OKX_*`, `PAY_TO_ADDRESS`, `X402_NETWORK`, `SHIPCHECK_PRICE` — payment
-- `VERIFICATION_ENABLED`, `BROWSER_EXECUTION_ENABLED` — incident gates
-- `METRICS_BEARER_TOKEN` — protect `/metrics`
-- `ALLOW_FREE_TEST_ROUTE` — must be `false` in production
+| Variable | Purpose |
+|---|---|
+| `PUBLIC_BASE_URL` | Origin used for `reportUrl` (must be HTTPS in production) |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated browser origins (e.g. Vercel landing) |
+| `DATABASE_URL` | PostgreSQL — Supabase **session pooler** from Railway |
+| `TIGRIS_STORAGE_*` | S3-compatible evidence storage (`AWS_*` + `BUCKET_NAME` also OK) |
+| `OPENAI_API_KEY` / `REQUIREMENT_COMPILER_MODEL` | Requirement compiler |
+| `OKX_*`, `PAY_TO_ADDRESS`, `X402_NETWORK`, `SHIPCHECK_PRICE` | x402 payment |
+| `OKX_SYNC_FACILITATOR_ON_START` | `true` in production so unpaid verify can return 402 |
+| `VERIFICATION_ENABLED`, `BROWSER_EXECUTION_ENABLED` | Incident gates |
+| `METRICS_BEARER_TOKEN` | Protect `/metrics` |
+| `ALLOW_FREE_TEST_ROUTE` | Must be `false` in production |
 
 Never put OKX secrets in browser workers.
 
+Runtime policies loaded by the API live in [`config/`](config/) (`acceptance-policy.v1.json`, `execution-policy.v1.json`).
+
 ## Deployment
 
-Production targets Railway with Supabase Postgres and private S3-compatible evidence storage (e.g. Tigris or R2). Use a container size that can run Playwright Chromium (≈4 GB RAM).
+Production targets **Railway** (API + Chromium) with **Supabase** Postgres and private S3-compatible evidence storage (e.g. Tigris or R2). Allocate ≈4 GB RAM for Playwright. Landing may deploy separately on **Vercel** with `VITE_API_BASE_URL` pointing at the Railway origin.
 
 ```bash
-# Link and deploy (Dockerfile + railway.toml)
+# Deploy (Dockerfile + railway.toml)
 railway up
 
 # Smoke-check a deployed origin
-./scripts/verify-deployment.sh https://your-app.up.railway.app
+BASE_URL=https://shipcheck.up.railway.app ./scripts/verify-deployment.sh
+
+# Unpaid verify must return 402
+curl -i -X POST "$BASE_URL/v1/verify" \
+  -H 'content-type: application/json' \
+  -d '{"brief":"Build a responsive launch page with pricing and a waitlist form.","deliveryUrl":"https://example.com","mode":"quick","maxRequirements":12}'
 ```
+
+Pre-deploy runs migrations and seeds the demo report: `node dist/migrate-cli.js && node dist/seed-demo-cli.js`.
 
 See:
 
 - [`Dockerfile`](Dockerfile)
 - [`railway.toml`](railway.toml)
-- [`developer-docs/docs/09_DEPLOYMENT_AND_OPERATIONS.md`](developer-docs/docs/09_DEPLOYMENT_AND_OPERATIONS.md)
-- [`developer-docs/marketplace/listing.md`](developer-docs/marketplace/listing.md)
+- [`docs/DEPLOYMENT_AND_OPERATIONS.md`](docs/DEPLOYMENT_AND_OPERATIONS.md)
 
 ## Demo
 
 ```bash
+export OPENAI_API_KEY='…'   # required for /v1/compile
+pnpm --filter @shipcheck/fixture-sites build
 ./scripts/demo-90s.sh
 ```
 
@@ -129,10 +144,14 @@ The `/demo` fixture combines missing pricing, a failing waitlist path, and mobil
 
 ## Documentation
 
-- Product and architecture: [`developer-docs/`](developer-docs/)
-- Task plan: [`tasks/plan.md`](tasks/plan.md)
-- ADRs: [`developer-docs/docs/12_ADRS.md`](developer-docs/docs/12_ADRS.md)
+- Overview: [`docs/README.md`](docs/README.md)
+- Product / SRS: [`docs/PRODUCT_SPEC.md`](docs/PRODUCT_SPEC.md), [`docs/SRS.md`](docs/SRS.md)
+- Architecture: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- API & A2MCP: [`docs/API_AND_A2MCP.md`](docs/API_AND_A2MCP.md)
+- Security: [`docs/SECURITY.md`](docs/SECURITY.md)
+- ADRs: [`docs/ADRS.md`](docs/ADRS.md)
+- Roadmap: [`docs/ROADMAP.md`](docs/ROADMAP.md)
 
 ## License
 
-Private / unpublished unless otherwise noted.
+[MIT](LICENSE)
