@@ -21,11 +21,19 @@ describe("LandingPage", () => {
     expect(screen.getByText("Agent Acceptance Layer")).toBeInTheDocument();
     expect(screen.getByText("Do not trust “done.” Verify it.")).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Overview" }),
+      screen.getByRole("heading", { name: "How to run a verify" }),
     ).toBeInTheDocument();
+    expect(screen.getByText("Production")).toBeInTheDocument();
+    expect(screen.getByLabelText(/Brief/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Delivery URL/i)).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Agent prompt" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "curl" })).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Bounded public-web scope" }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "How to run a verify" }),
+    ).toHaveAttribute("href", "#howto");
     expect(screen.getByRole("contentinfo", { name: "Site" })).toBeInTheDocument();
     expect(
       screen.getByText("Completion is a claim. Acceptance requires evidence.", {

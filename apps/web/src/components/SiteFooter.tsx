@@ -17,7 +17,7 @@ export function SiteFooter() {
           <h2 id="footer-product">Product</h2>
           <ul>
             <li>
-              <a href="/#overview">Overview</a>
+              <a href="/#howto">How to</a>
             </li>
             <li>
               <a href="/#traits">Traits</a>

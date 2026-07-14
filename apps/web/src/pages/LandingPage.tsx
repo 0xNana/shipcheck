@@ -1,20 +1,8 @@
 import { Link } from "react-router-dom";
 
 import { SiteFooter } from "../components/SiteFooter.js";
+import { VerifyHowto } from "../components/VerifyHowto.js";
 import { DEMO_RECEIPT_ID } from "../report-api.js";
-
-const API_SNIPPET = `// 1. Ask ShipCheck to verify a public delivery.
-curl -X POST "$SHIPCHECK_URL/v1/verify" \\
-  -H 'content-type: application/json' \\
-  -d '{
-    "brief": "Build a responsive launch page with pricing and a waitlist form.",
-    "deliveryUrl": "https://example.com",
-    "mode": "quick",
-    "maxRequirements": 12
-  }'
-
-// 2. Without payment proof the API returns HTTP 402 (x402).
-// 3. Replay with payment, then open reportUrl for the human report.`;
 
 const TRAITS = [
   {
@@ -59,7 +47,7 @@ export function LandingPage() {
           ShipCheck
         </a>
         <nav className="topbar__nav" aria-label="Primary">
-          <a href="#overview">Overview</a>
+          <a href="#howto">How to</a>
           <a href="#traits">Traits</a>
           <a href="#scope">Scope</a>
           <Link
@@ -94,8 +82,8 @@ export function LandingPage() {
             >
               Verify a delivery
             </Link>
-            <a className="cta cta--ghost" href="#overview">
-              Run ShipCheck
+            <a className="cta cta--ghost" href="#howto">
+              How to run a verify
             </a>
           </div>
         </section>
@@ -113,17 +101,18 @@ export function LandingPage() {
         </aside>
 
         <section
-          id="overview"
-          aria-labelledby="overview-heading"
+          id="howto"
+          aria-labelledby="howto-heading"
           className="landing__section"
         >
           <div className="section-head">
-            <h2 id="overview-heading">Overview</h2>
-            <p>One paid call. A typed receipt. An unlisted human report.</p>
+            <h2 id="howto-heading">How to run a verify</h2>
+            <p>
+              Fill the form — it builds a live agent prompt or curl for you.
+              Copy, paste, pay on 402, then open the report.
+            </p>
           </div>
-          <pre className="code-panel">
-            <code aria-label="Example POST /v1/verify request">{API_SNIPPET}</code>
-          </pre>
+          <VerifyHowto />
         </section>
 
         <section
