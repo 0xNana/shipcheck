@@ -1,5 +1,9 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { createServer as createHttpsServer } from "node:https";
 import { once } from "node:events";
+import { readFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 export const FIXTURE_PATHS = [
   "/complete",
@@ -202,8 +206,32 @@ async function handle(
   }
 }
 
-export async function startFixtureServer(): Promise<RunningFixtureServer> {
-  const server = createServer((request, response) => {
+export interface StartFixtureServerOptions {
+  /** Serve HTTPS with the bundled loopback dev certificate (for local demo/API compile). */
+  readonly https?: boolean;
+}
+
+const DEV_CERT_DIR = join(dirname(fileURLToPath(import.meta.url)), "../dev-certs");
+
+async function createFixtureListener(
+  handler: (request: IncomingMessage, response: ServerResponse) => void,
+  options: StartFixtureServerOptions,
+) {
+  if (options.https === true) {
+    const [key, cert] = await Promise.all([
+      readFile(join(DEV_CERT_DIR, "fixture.key")),
+      readFile(join(DEV_CERT_DIR, "fixture.crt")),
+    ]);
+    return createHttpsServer({ key, cert }, handler);
+  }
+  return createServer(handler);
+}
+
+export async function startFixtureServer(
+  options: StartFixtureServerOptions = {},
+): Promise<RunningFixtureServer> {
+  const protocol = options.https === true ? "https" : "http";
+  const server = await createFixtureListener((request, response) => {
     void handle(request, response).catch(() => {
       if (!response.headersSent) {
         send(response, 500, "Fixture failure", "text/plain; charset=utf-8");
@@ -211,7 +239,7 @@ export async function startFixtureServer(): Promise<RunningFixtureServer> {
         response.destroy();
       }
     });
-  });
+  }, options);
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
   const address = server.address();
@@ -220,7 +248,7 @@ export async function startFixtureServer(): Promise<RunningFixtureServer> {
     throw new TypeError("Fixture server did not bind a TCP port");
   }
 
-  const origin = `http://127.0.0.1:${String(address.port)}`;
+  const origin = `${protocol}://127.0.0.1:${String(address.port)}`;
   let closed = false;
   return {
     origin,

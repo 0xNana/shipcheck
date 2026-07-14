@@ -1,6 +1,7 @@
 import { startFixtureServer } from "./server.js";
 
-const server = await startFixtureServer();
+const https = process.argv.includes("--https");
+const server = await startFixtureServer({ https });
 console.log(`fixture server listening on ${server.origin}`);
 
 process.on("SIGINT", () => {

@@ -207,7 +207,7 @@ export async function startProductionServer(
         price: config.shipcheckPrice,
         syncFacilitatorOnStart: parseBooleanEnv(
           env["OKX_SYNC_FACILITATOR_ON_START"],
-          false,
+          true,
         ),
       },
     );
