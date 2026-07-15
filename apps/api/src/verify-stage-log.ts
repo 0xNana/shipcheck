@@ -11,7 +11,7 @@ export interface VerifyStageLogger {
 export function createVerifyStageLogger(options: {
   readonly requestId: string;
   readonly startedAt: number;
-  readonly logger?: StructuredLogger;
+  readonly logger?: StructuredLogger | undefined;
 }): VerifyStageLogger {
   const logStage = (
     stage: string,
