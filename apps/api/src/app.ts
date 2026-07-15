@@ -41,6 +41,8 @@ import {
   type StructuredLogger,
 } from "@shipcheck/service-ops";
 
+import { createVerifyStageLogger } from "./verify-stage-log.js";
+
 export interface VerifyOperationResult {
   readonly response: VerifyResponse;
   readonly reportBundle: ReportBundle;
@@ -335,6 +337,55 @@ export function createApiApp(options: ApiAppOptions): Express {
     next();
   };
 
+  const verifyStageContext: RequestHandler = (_request, response, next) => {
+    const requestId = options.createRequestId();
+    const startedAt = Date.now();
+    response.locals["requestId"] = requestId;
+    response.locals["verifyStartedAt"] = startedAt;
+    createVerifyStageLogger({
+      requestId,
+      startedAt,
+      logger: options.telemetry?.logger,
+    }).logStage("request_received");
+    next();
+  };
+
+  const withPaymentStageLogging = (
+    middleware: RequestHandler,
+  ): RequestHandler => {
+    return (request, response, next) => {
+      const requestId = response.locals["requestId"];
+      const startedAt = response.locals["verifyStartedAt"];
+      if (typeof requestId !== "string" || typeof startedAt !== "number") {
+        middleware(request, response, next);
+        return;
+      }
+      const stages = createVerifyStageLogger({
+        requestId,
+        startedAt,
+        logger: options.telemetry?.logger,
+      });
+      let paymentPassed = false;
+      const onFinish = (): void => {
+        response.removeListener("finish", onFinish);
+        if (!paymentPassed && response.statusCode === 402) {
+          stages.logStage("payment_challenge", { statusCode: 402 });
+        }
+      };
+      response.on("finish", onFinish);
+      middleware(request, response, (error?: unknown) => {
+        if (error !== undefined) {
+          stages.logFailure(error);
+          next(error);
+          return;
+        }
+        paymentPassed = true;
+        stages.logStage("payment_verified");
+        next();
+      });
+    };
+  };
+
   const verifyHandler: RequestHandler = async (request, response) => {
     const context = response.locals["idempotency"] as
       | IdempotencyContext
@@ -344,6 +395,27 @@ export function createApiApp(options: ApiAppOptions): Express {
       context?.key ??
       idempotencyKey(request.get("Idempotency-Key"), input);
     const fingerprint = context?.fingerprint ?? requestFingerprint(input);
+    const activeRequestId =
+      typeof response.locals["requestId"] === "string"
+        ? (response.locals["requestId"] as string)
+        : options.createRequestId();
+    const startedAt =
+      typeof response.locals["verifyStartedAt"] === "number"
+        ? (response.locals["verifyStartedAt"] as number)
+        : Date.now();
+    response.locals["requestId"] = activeRequestId;
+    response.locals["verifyStartedAt"] = startedAt;
+    const stages = createVerifyStageLogger({
+      requestId: activeRequestId,
+      startedAt,
+      logger: options.telemetry?.logger,
+    });
+    stages.logStage("input_validated");
+    if (options.paymentMiddleware === undefined) {
+      // Free / test paths still emit the payment checkpoint so sequences line up.
+      stages.logStage("payment_verified");
+    }
+
     let claimAcquired = false;
     if (key !== undefined) {
       const claim = await options.idempotencyStore.claim(
@@ -354,6 +426,7 @@ export function createApiApp(options: ApiAppOptions): Express {
       if (claim.outcome === "REPLAY") {
         options.telemetry?.metrics.recordIdempotencyHit();
         response.set("Idempotency-Replayed", "true");
+        stages.logStage("response_sent", { statusCode: 200 });
         response.json(VerifyResponseSchema.parse(claim.value));
         return;
       }
@@ -375,7 +448,7 @@ export function createApiApp(options: ApiAppOptions): Express {
       claimAcquired = true;
     }
 
-    let requestId: string | undefined;
+    let requestId: string | undefined = activeRequestId;
     let requestStored = false;
     let receiptIdToRollback: string | undefined;
     const rollback = async (preserveClaim: boolean): Promise<void> => {
@@ -410,9 +483,6 @@ export function createApiApp(options: ApiAppOptions): Express {
       }
     };
     try {
-      const activeRequestId = options.createRequestId();
-      requestId = activeRequestId;
-      response.locals["requestId"] = activeRequestId;
       const createdAt = options.now();
       await options.requestStore.put({
         requestId: activeRequestId,
@@ -453,6 +523,7 @@ export function createApiApp(options: ApiAppOptions): Express {
         },
         rollback,
       } satisfies ResponseFinalization;
+      stages.logStage("response_sent", { statusCode: 200 });
       response.json(result);
     } catch (error) {
       await rollback(false).catch(() => undefined);
@@ -462,12 +533,13 @@ export function createApiApp(options: ApiAppOptions): Express {
 
   app.post(
     "/v1/verify",
+    verifyStageContext,
     idempotencyPreflight,
     settlementPersistence,
     ...(options.verificationEnabled === false ? [verificationDisabledHandler] : []),
     ...(options.paymentMiddleware === undefined
       ? []
-      : [options.paymentMiddleware]),
+      : [withPaymentStageLogging(options.paymentMiddleware)]),
     verifyHandler,
   );
 

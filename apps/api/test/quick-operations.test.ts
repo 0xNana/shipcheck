@@ -86,9 +86,14 @@ describe("quick verification orchestration", () => {
     const worker = {
       executeWithEvidence: (
         request: Parameters<PublicWebWorker["executeWithEvidence"]>[0],
+        capture?: Parameters<PublicWebWorker["executeWithEvidence"]>[1],
       ) => {
         const check = request.checks[0];
         if (check === undefined) throw new Error("Expected one planned check");
+        capture?.onStage?.("browser_started");
+        capture?.onStage?.("navigation_completed", {
+          url: "https://example.com/",
+        });
         return Promise.resolve({
           executionStatus: "COMPLETED" as const,
           targetFingerprint: {
@@ -125,6 +130,22 @@ describe("quick verification orchestration", () => {
     const artifactSink: ArtifactSink = {
       write: () => Promise.reject(new Error("No artifact expected")),
     };
+    const stageEvents: string[] = [];
+    const logger = {
+      log: (
+        _level: string,
+        _message: string,
+        fields: Record<string, unknown> = {},
+      ) => {
+        if (typeof fields["stage"] === "string") {
+          stageEvents.push(fields["stage"]);
+        }
+      },
+      debug: () => undefined,
+      info: () => undefined,
+      warn: () => undefined,
+      error: () => undefined,
+    };
     const operations = createQuickVerificationOperations({
       compiler: {
         model,
@@ -142,6 +163,7 @@ describe("quick verification orchestration", () => {
       createReceiptId: () => "receipt_1",
       now: () => "2026-07-12T20:00:01.000Z",
       totalTimeoutMs: 1_000,
+      logger,
     });
 
     const response = await operations.verify(input, "sc_req_1");
@@ -151,6 +173,14 @@ describe("quick verification orchestration", () => {
     expect(response.response.results[0]?.status).toBe("PASS");
     expect(response.response.receipt.receiptHash).toMatch(/^[a-f0-9]{64}$/u);
     expect(response.reportBundle.receipt.receiptId).toBe("receipt_1");
+    expect(stageEvents).toEqual([
+      "compiler_started",
+      "compiler_completed",
+      "browser_started",
+      "navigation_completed",
+      "checks_completed",
+      "receipt_created",
+    ]);
     await expect(operations.compile(input)).resolves.toMatchObject({
       schemaVersion: "shipcheck-acceptance-contract-v1.0.0",
     });

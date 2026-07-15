@@ -470,6 +470,7 @@ describe("ShipCheck API", () => {
       error: {
         code: "REQUEST_CONFLICT",
         message: "Idempotency key was already used for another request",
+        requestId: "sc_req_1",
       },
     });
     expect(verify).toHaveBeenCalledTimes(1);

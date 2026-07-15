@@ -16,10 +16,12 @@ const ALLOWED_LOG_FIELDS = new Set([
   "contractId",
   "stage",
   "errorCode",
+  "error",
   "method",
   "path",
   "statusCode",
   "durationMs",
+  "elapsedMs",
   "route",
   "paid",
   "verdict",
@@ -30,6 +32,10 @@ const ALLOWED_LOG_FIELDS = new Set([
   "event",
   "ready",
   "checks",
+  "requirementCount",
+  "passed",
+  "failed",
+  "url",
 ]);
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {

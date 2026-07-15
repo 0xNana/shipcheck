@@ -23,6 +23,17 @@ export interface StaticWebOptions {
   readonly distRoot?: string;
 }
 
+/** API / ops paths must never be swallowed by the marketing SPA. */
+export function isApiOrOpsPath(pathname: string): boolean {
+  return (
+    pathname === "/metrics" ||
+    pathname === "/health" ||
+    pathname.startsWith("/health/") ||
+    pathname === "/v1" ||
+    pathname.startsWith("/v1/")
+  );
+}
+
 export function createStaticWebMiddleware(
   options: StaticWebOptions = {},
 ): RequestHandler {
@@ -38,7 +49,20 @@ export function createSpaFallbackMiddleware(
   options: StaticWebOptions = {},
 ): RequestHandler {
   const distRoot = options.distRoot ?? resolveWebDistRoot();
-  return (_request, response) => {
+  return (request, response, next) => {
+    if (request.method !== "GET" && request.method !== "HEAD") {
+      next();
+      return;
+    }
+    if (isApiOrOpsPath(request.path)) {
+      response.status(404).json({
+        error: {
+          code: "NOT_FOUND",
+          message: "No such API route for this method",
+        },
+      });
+      return;
+    }
     response.sendFile(join(distRoot, "index.html"));
   };
 }

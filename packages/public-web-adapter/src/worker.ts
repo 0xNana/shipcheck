@@ -74,6 +74,10 @@ export interface EvidenceCaptureOptions {
   readonly artifactSink: ArtifactSink;
   readonly now: () => string;
   readonly tempRoot?: string;
+  readonly onStage?: (
+    stage: string,
+    extra?: Record<string, unknown>,
+  ) => void;
 }
 
 interface RunState {
@@ -621,10 +625,18 @@ export class PublicWebWorker {
     };
     request.signal?.addEventListener("abort", abortActiveWork, { once: true });
 
+    const emitStage = (
+      stage: string,
+      extra: Record<string, unknown> = {},
+    ): void => {
+      capture?.onStage?.(stage, extra);
+    };
+
     try {
       request.signal?.throwIfAborted();
       const target = await this.options.urlGuard.validate(request.target);
       request.signal?.throwIfAborted();
+      emitStage("browser_started");
       browser = await raceWithAbort(
         chromium.launch({
           executablePath: this.options.executablePath,
@@ -729,6 +741,19 @@ export class PublicWebWorker {
         if (response === null) {
           throw new Error("Target navigation returned no response");
         }
+        let navigationUrl = target.normalizedUrl;
+        try {
+          const parsed = new URL(activePage.url());
+          navigationUrl = `${parsed.origin}${parsed.pathname}`;
+        } catch {
+          try {
+            const parsed = new URL(target.normalizedUrl);
+            navigationUrl = `${parsed.origin}${parsed.pathname}`;
+          } catch {
+            navigationUrl = "[invalid-url]";
+          }
+        }
+        emitStage("navigation_completed", { url: navigationUrl });
         const checkResults: CheckExecutionResult[] = [];
         for (const check of checks) {
           let checkResult: CheckExecutionResult;

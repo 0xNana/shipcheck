@@ -31,6 +31,7 @@ import {
   type VerifyOperationResult,
 } from "./app.js";
 import { buildReportUrl } from "./report-url.js";
+import { createVerifyStageLogger } from "./verify-stage-log.js";
 
 export interface QuickVerificationOptions {
   readonly compiler: RequirementCompilerOptions;
@@ -121,7 +122,13 @@ export function createQuickVerificationOperations(
         );
       }
       const startedAt = Date.now();
+      const stages = createVerifyStageLogger({
+        requestId,
+        startedAt,
+        logger: options.logger,
+      });
       const run = async (signal: AbortSignal): Promise<VerifyOperationResult> => {
+        stages.logStage("compiler_started");
         let contract;
         try {
           contract = await compileRequirements(
@@ -135,6 +142,9 @@ export function createQuickVerificationOperations(
           }
           throw error;
         }
+        stages.logStage("compiler_completed", {
+          requirementCount: contract.requirements.length,
+        });
         const executableCount = contract.requirements.filter(
           (requirement) => requirement.class === "EXECUTABLE",
         ).length;
@@ -153,6 +163,9 @@ export function createQuickVerificationOperations(
             {
               artifactSink: options.artifactSink,
               now: options.now,
+              onStage: (stage, extra = {}) => {
+                stages.logStage(stage, extra);
+              },
             },
           );
         } catch (error) {
@@ -166,6 +179,13 @@ export function createQuickVerificationOperations(
           plan.checks,
           execution.observations,
         );
+        const passed = results.filter(
+          (result) => result.status === "PASS",
+        ).length;
+        const failed = results.filter(
+          (result) => result.status === "FAIL",
+        ).length;
+        stages.logStage("checks_completed", { passed, failed });
         const receiptId = options.createReceiptId();
         const testedAt = options.now();
         const bundle = buildAcceptanceBundle({
@@ -181,6 +201,9 @@ export function createQuickVerificationOperations(
           results,
           artifacts: execution.artifacts,
           testedAt,
+        });
+        stages.logStage("receipt_created", {
+          receiptId: bundle.receipt.receiptId,
         });
         const response = VerifyResponseSchema.parse({
           requestId,
@@ -232,7 +255,10 @@ export function createQuickVerificationOperations(
           },
         };
       };
-      return withTotalTimeout(run, options.totalTimeoutMs);
+      return withTotalTimeout(run, options.totalTimeoutMs).catch((error: unknown) => {
+        stages.logFailure(error);
+        throw error;
+      });
     },
   };
 }

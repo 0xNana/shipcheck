@@ -60,10 +60,22 @@ describe("sanitizeLogFields", () => {
         apiKey: "secret",
         secretField: "hidden",
         stage: "verify",
+        elapsedMs: 42,
+        requirementCount: 3,
+        passed: 2,
+        failed: 1,
+        url: "https://example.com/",
+        error: "boom",
       }),
     ).toEqual({
       requestId: "req_1",
       stage: "verify",
+      elapsedMs: 42,
+      requirementCount: 3,
+      passed: 2,
+      failed: 1,
+      url: "https://example.com/",
+      error: "boom",
     });
   });
 });
