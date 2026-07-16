@@ -33,6 +33,19 @@ const config = {
   price: "$0.01",
 } as const;
 
+const verifyResource = {
+  accepts: [
+    {
+      scheme: "exact",
+      network: config.network,
+      payTo: config.payTo,
+      price: config.price,
+    },
+  ],
+  description: "ShipCheck Quick Acceptance verification",
+  mimeType: "application/json",
+};
+
 describe("createOkxPaymentMiddleware", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -54,18 +67,8 @@ describe("createOkxPaymentMiddleware", () => {
     );
     expect(sdk.middleware).toHaveBeenCalledWith(
       {
-        "POST /v1/verify": {
-          accepts: [
-            {
-              scheme: "exact",
-              network: config.network,
-              payTo: config.payTo,
-              price: config.price,
-            },
-          ],
-          description: "ShipCheck Quick Acceptance verification",
-          mimeType: "application/json",
-        },
+        "GET /v1/verify": verifyResource,
+        "POST /v1/verify": verifyResource,
       },
       expect.anything(),
       undefined,

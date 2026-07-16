@@ -232,6 +232,16 @@ export function createApiApp(options: ApiAppOptions): Express {
     );
   };
 
+  /** Paid GET is unsupported — real verification requires a POST JSON body. */
+  const verifyGetNotAllowedHandler: RequestHandler = (_request, response) => {
+    sendError(
+      response,
+      405,
+      "METHOD_NOT_ALLOWED",
+      "Use POST /v1/verify with a JSON body to run verification",
+    );
+  };
+
   app.post("/v1/compile", async (request, response) => {
     const input = parseRequest(request.body);
     const contract = await options.operations.compile(input);
@@ -531,15 +541,25 @@ export function createApiApp(options: ApiAppOptions): Express {
     }
   };
 
+  const verifyPaymentMiddleware =
+    options.paymentMiddleware === undefined
+      ? []
+      : [withPaymentStageLogging(options.paymentMiddleware)];
+
+  app.get(
+    "/v1/verify",
+    ...(options.verificationEnabled === false ? [verificationDisabledHandler] : []),
+    ...verifyPaymentMiddleware,
+    verifyGetNotAllowedHandler,
+  );
+
   app.post(
     "/v1/verify",
     verifyStageContext,
     idempotencyPreflight,
     settlementPersistence,
     ...(options.verificationEnabled === false ? [verificationDisabledHandler] : []),
-    ...(options.paymentMiddleware === undefined
-      ? []
-      : [withPaymentStageLogging(options.paymentMiddleware)]),
+    ...verifyPaymentMiddleware,
     verifyHandler,
   );
 

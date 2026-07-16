@@ -315,12 +315,14 @@ describe("ShipCheck API", () => {
     await request(app).post("/v1/verify").send(verifyInput).expect(402);
     expect(verify).not.toHaveBeenCalled();
 
+    await request(app).get("/v1/verify").expect(402);
+
     await request(app)
       .post("/v1/verify")
       .set("X-Test-Payment", "valid")
       .send(verifyInput)
       .expect(200);
-    expect(order).toEqual(["payment", "payment", "business"]);
+    expect(order).toEqual(["payment", "payment", "payment", "business"]);
   });
 
   it("serves a completed idempotent replay before requesting payment again", async () => {

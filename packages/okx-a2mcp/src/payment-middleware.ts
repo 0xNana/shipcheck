@@ -42,6 +42,22 @@ function validateConfig(config: OkxPaymentConfig): void {
   }
 }
 
+/** Shared x402 resource metadata for marketplace GET probes and POST verify. */
+function verifyX402Resource(config: OkxPaymentConfig) {
+  return {
+    accepts: [
+      {
+        scheme: "exact" as const,
+        network: config.network,
+        payTo: config.payTo,
+        price: config.price,
+      },
+    ],
+    description: "ShipCheck Quick Acceptance verification",
+    mimeType: "application/json",
+  };
+}
+
 /**
  * Creates the paid boundary for the billable verification route.
  *
@@ -62,20 +78,13 @@ export function createOkxPaymentMiddleware(
   const resourceServer = new x402ResourceServer(facilitator);
   resourceServer.register(config.network, new ExactEvmScheme());
 
+  const verifyResource = verifyX402Resource(config);
+
   return paymentMiddleware(
     {
-      "POST /v1/verify": {
-        accepts: [
-          {
-            scheme: "exact",
-            network: config.network,
-            payTo: config.payTo,
-            price: config.price,
-          },
-        ],
-        description: "ShipCheck Quick Acceptance verification",
-        mimeType: "application/json",
-      },
+      // Body-less GET probes (onchainos x402-validate) must receive 402, not SPA/API 404.
+      "GET /v1/verify": verifyResource,
+      "POST /v1/verify": verifyResource,
     },
     resourceServer,
     undefined,

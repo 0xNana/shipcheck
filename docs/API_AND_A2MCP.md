@@ -13,17 +13,23 @@ POST /v1/verify
 ```
 
 Unpaid calls must return **HTTP 402** with an x402 `PAYMENT-REQUIRED` challenge.
-Marketplace validators (`onchainos agent x402-check`) default to a body-less probe —
-always pass a JSON business body so the checker POSTs instead of GETting the
-marketing SPA:
+`GET /v1/verify` returns the same 402 challenge for body-less marketplace probes
+(`onchainos agent x402-validate`). Billable verification still requires **POST**
+with a JSON body.
+
+For manual checks, `onchainos agent x402-check` works with or without `--body`
+once GET probes are enabled:
 
 ```bash
+onchainos agent x402-check \
+  --endpoint 'https://shipcheck.up.railway.app/v1/verify'
+
 onchainos agent x402-check \
   --endpoint 'https://shipcheck.up.railway.app/v1/verify' \
   --body '{"brief":"Build a responsive launch page with pricing.","deliveryUrl":"https://example.com","mode":"quick","maxRequirements":4}'
 ```
 
-`GET /v1/*` is not billed and must not return HTML (404 JSON).
+`GET /v1/*` must not return HTML (404 JSON only when no x402 route matches).
 
 Request:
 
