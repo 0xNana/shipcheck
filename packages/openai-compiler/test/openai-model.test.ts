@@ -63,6 +63,38 @@ describe("createOpenAiCompilerModel", () => {
     expect(body.response_format.type).toBe("json_schema");
   });
 
+  it("omits temperature for GPT-5 models that only accept the default", async () => {
+    const fetchImpl = vi.fn((_input: RequestInfo | URL, init?: RequestInit) =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: JSON.stringify({ requirements: [] }) } }],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      ),
+    );
+
+    const model = createOpenAiCompilerModel({
+      apiKey: "test-key",
+      model: "gpt-5.6-terra",
+      fetchImpl,
+    });
+
+    await model.generate({
+      systemPrompt: "system",
+      brief: "Build pricing.",
+      maxRequirements: 8,
+      allowedIntents: ["SECTION_PRESENT"],
+      responseSchema: { type: "object" },
+      isRepair: false,
+    });
+
+    const rawBody = fetchImpl.mock.calls[0]?.[1]?.body;
+    const body = JSON.parse(rawBody as string) as { temperature?: number };
+    expect(body.temperature).toBeUndefined();
+  });
+
   it("aborts in-flight requests when the caller signal aborts", async () => {
     let observedSignal: AbortSignal | undefined;
     const fetchImpl = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {

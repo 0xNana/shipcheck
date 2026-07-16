@@ -39,6 +39,11 @@ function buildUserPrompt(
   return lines.join("\n\n");
 }
 
+/** GPT-5+ and reasoning models reject non-default temperature (e.g. 0). */
+function supportsCustomTemperature(model: string): boolean {
+  return !/^gpt-5/u.test(model) && !/^o[0-9]/u.test(model);
+}
+
 export function createOpenAiCompilerModel(
   options: OpenAiCompilerModelOptions,
 ): RequirementCompilerModel {
@@ -69,7 +74,9 @@ export function createOpenAiCompilerModel(
           },
           body: JSON.stringify({
             model: options.model,
-            temperature: 0,
+            ...(supportsCustomTemperature(options.model)
+              ? { temperature: 0 }
+              : {}),
             response_format: {
               type: "json_schema",
               json_schema: {
