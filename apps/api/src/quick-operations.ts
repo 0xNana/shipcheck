@@ -14,6 +14,7 @@ import {
 import { UrlPolicyError, type PublicWebWorker } from "@shipcheck/public-web-adapter";
 import {
   RequirementCompilationError,
+  compileBaselineRequirements,
   compileRequirements,
   type RequirementCompilerOptions,
 } from "@shipcheck/requirement-compiler";
@@ -43,6 +44,7 @@ export interface QuickVerificationOptions {
   readonly createReceiptId: () => string;
   readonly now: () => string;
   readonly totalTimeoutMs: number;
+  readonly compilerTimeoutMs?: number;
   readonly reportBaseUrl?: string;
   readonly browserExecutionEnabled?: boolean;
   readonly metrics?: ShipCheckMetrics;
@@ -86,6 +88,12 @@ export function createQuickVerificationOperations(
     options.totalTimeoutMs <= 0
   ) {
     throw new TypeError("totalTimeoutMs must be a positive finite number");
+  }
+  const compilerTimeoutMs =
+    options.compilerTimeoutMs ??
+    Math.min(18_000, Math.max(1, Math.floor(options.totalTimeoutMs / 2)));
+  if (!Number.isFinite(compilerTimeoutMs) || compilerTimeoutMs <= 0) {
+    throw new TypeError("compilerTimeoutMs must be a positive finite number");
   }
   const browserExecutionEnabled = options.browserExecutionEnabled ?? true;
 
@@ -140,28 +148,47 @@ export function createQuickVerificationOperations(
       const run = async (signal: AbortSignal): Promise<VerifyOperationResult> => {
         stages.logStage("compiler_started");
         let contract;
+        const compilerController = new AbortController();
+        const abortCompiler = (): void => {
+          compilerController.abort(signal.reason);
+        };
+        signal.addEventListener("abort", abortCompiler, { once: true });
+        const compilerTimeoutError = new Error(
+          "Requirement compiler exceeded its relay-safe budget",
+        );
+        const compilerTimer = setTimeout(() => {
+          compilerController.abort(compilerTimeoutError);
+        }, compilerTimeoutMs);
+        compilerTimer.unref();
         try {
           contract = await compileRequirements(
             input,
             options.compiler,
-            signal,
+            compilerController.signal,
           );
         } catch (error) {
-          if (error instanceof RequirementCompilationError) {
-            options.metrics?.recordCompilerFailure();
-          } else if (error instanceof Error) {
-            options.logger?.error("verify.compiler_failed", {
-              requestId,
-              message: error.message,
-              stage: "compiler",
-            });
-            throw new ServiceError(
-              503,
-              "EXECUTION_UNAVAILABLE",
-              "Requirement compiler is temporarily unavailable",
-            );
+          if (signal.aborted) {
+            throw signal.reason instanceof Error
+              ? signal.reason
+              : new Error("Verification aborted");
           }
-          throw error;
+          options.metrics?.recordCompilerFailure();
+          const reason = compilerController.signal.reason === compilerTimeoutError
+            ? "timeout"
+            : error instanceof RequirementCompilationError
+              ? "invalid_output"
+              : "provider_error";
+          stages.logStage("compiler_fallback", { reason });
+          options.logger?.warn("verify.compiler_fallback", {
+            requestId,
+            reason,
+            message: error instanceof Error ? error.message : String(error),
+            stage: "compiler",
+          });
+          contract = compileBaselineRequirements(input, options.compiler);
+        } finally {
+          clearTimeout(compilerTimer);
+          signal.removeEventListener("abort", abortCompiler);
         }
         stages.logStage("compiler_completed", {
           requirementCount: contract.requirements.length,

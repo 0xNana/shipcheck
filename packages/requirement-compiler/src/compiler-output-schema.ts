@@ -1,5 +1,4 @@
 import {
-  CheckIntentSchema,
   PrioritySourceSchema,
   RequirementClassSchema,
   RequirementPrioritySchema,

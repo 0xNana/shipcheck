@@ -36,7 +36,7 @@ import {
   parseBooleanEnv,
 } from "@shipcheck/service-ops";
 import type { VerifyResponse } from "@shipcheck/service-core";
-import express from "express";
+import type express from "express";
 
 import { loadApiConfig } from "./config.js";
 import { createPaidApiApp } from "./paid-app.js";
@@ -139,7 +139,7 @@ export async function startProductionServer(
       urlGuard: createProductionUrlGuard(),
       policy: executionPolicy,
       budgets: {
-        runTimeoutMs: config.maxRunSeconds * 1000,
+        runTimeoutMs: Math.min(config.maxRunSeconds * 1000, 7_000),
       },
     });
 
@@ -166,7 +166,9 @@ export async function startProductionServer(
       adapterVersion: ADAPTER_VERSION,
       createReceiptId: () => `receipt_${randomUUID().replace(/-/gu, "")}`,
       now: () => new Date().toISOString(),
-      totalTimeoutMs: config.maxRunSeconds * 1000,
+      // OKX's x402 relay closes paid replays at roughly 29 seconds.
+      compilerTimeoutMs: 18_000,
+      totalTimeoutMs: Math.min(config.maxRunSeconds * 1000, 26_000),
       reportBaseUrl: config.publicBaseUrl,
       browserExecutionEnabled: config.browserExecutionEnabled,
       metrics,

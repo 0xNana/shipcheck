@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildCompilerPrompt,
+  compileBaselineRequirements,
   compileRequirements,
   RequirementCompilationError,
   type CompilerModelRequest,
@@ -88,6 +89,33 @@ describe("buildCompilerPrompt", () => {
 });
 
 describe("compileRequirements", () => {
+  it("builds a deterministic executable baseline without calling a model", () => {
+    const contract = compileBaselineRequirements(
+      {
+        brief: "Verify the public website is healthy.",
+        deliveryUrl: "https://example.com",
+        maxRequirements: 2,
+      },
+      {
+        model: new FixtureModel([]),
+        compilerVersion: "compiler-v1",
+        policyVersion: "policy-v1",
+        executionPolicyVersion: "execution-v1",
+        createContractId: () => "contract_fallback",
+        now: () => "2026-07-12T10:00:00Z",
+      },
+    );
+
+    expect(contract.contractId).toBe("contract_fallback");
+    expect(contract.requirements).toHaveLength(2);
+    expect(
+      contract.requirements.every(
+        (requirement) => requirement.class === "EXECUTABLE",
+      ),
+    ).toBe(true);
+    expect(contract.contractHash).toBe(hashAcceptanceContract(contract));
+  });
+
   it("assembles and hashes a validated contract from model candidates", async () => {
     const validOutput = {
       requirements: [

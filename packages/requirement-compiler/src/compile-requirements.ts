@@ -6,7 +6,7 @@ import {
   hashAcceptanceContract,
   validateRequirementProvenance,
 } from "@shipcheck/domain";
-import { z } from "zod";
+import type { z } from "zod";
 
 import { buildCompilerPrompt } from "./prompt.js";
 import { normalizeAndDeduplicateRequirements } from "./normalize-requirements.js";
@@ -76,6 +76,82 @@ export class RequirementCompilationError extends Error {
   }
 }
 
+const baselineRequirements = [
+  {
+    id: "REQ-BASELINE-HTTPS",
+    statement: "The website is accessible over HTTPS.",
+    intent: "HTTPS_ENABLED",
+    rationale: "Baseline public-site availability check.",
+  },
+  {
+    id: "REQ-BASELINE-ASSETS",
+    statement: "The website loads its required page assets successfully.",
+    intent: "ASSETS_LOAD",
+    rationale: "Baseline public-site asset health check.",
+  },
+  {
+    id: "REQ-BASELINE-CONSOLE",
+    statement: "The website produces no severe browser console errors.",
+    intent: "NO_SEVERE_CONSOLE_ERRORS",
+    rationale: "Baseline public-site browser health check.",
+  },
+  {
+    id: "REQ-BASELINE-NETWORK",
+    statement: "The website has no failed same-origin network requests.",
+    intent: "NO_FAILED_SAME_ORIGIN_REQUESTS",
+    rationale: "Baseline public-site network health check.",
+  },
+] as const;
+
+function buildContract(
+  request: z.infer<typeof VerifyRequestSchema>,
+  requirements: z.infer<typeof RequirementSchema>[],
+  options: RequirementCompilerOptions,
+): CompiledAcceptanceContract {
+  const contractBody = {
+    schemaVersion: "shipcheck-acceptance-contract-v1.0.0" as const,
+    contractId: options.createContractId(),
+    compilerVersion: options.compilerVersion,
+    policyVersion: options.policyVersion,
+    executionPolicyVersion: options.executionPolicyVersion,
+    target: new URL(request.deliveryUrl).toString(),
+    requirements,
+    createdAt: options.now(),
+  };
+
+  return AcceptanceContractSchema.parse({
+    ...contractBody,
+    contractHash: hashAcceptanceContract(contractBody),
+  });
+}
+
+export function compileBaselineRequirements(
+  input: unknown,
+  options: RequirementCompilerOptions,
+): CompiledAcceptanceContract {
+  const request = VerifyRequestSchema.parse(input);
+  const requirements = baselineRequirements
+    .slice(0, Math.min(request.maxRequirements, baselineRequirements.length))
+    .map((baseline) =>
+      RequirementSchema.parse({
+        id: baseline.id,
+        statement: baseline.statement,
+        provenance: {
+          kind: "DERIVED_BASELINE",
+          rationale: baseline.rationale,
+        },
+        priority: "OPTIONAL",
+        prioritySource: "DEFAULT",
+        confidence: 1,
+        class: "EXECUTABLE",
+        adapter: "PUBLIC_WEB",
+        intent: baseline.intent,
+      }),
+    );
+
+  return buildContract(request, requirements, options);
+}
+
 export async function compileRequirements(
   input: unknown,
   options: RequirementCompilerOptions,
@@ -128,19 +204,5 @@ export async function compileRequirements(
     requirements = repairedValidation.requirements;
   }
 
-  const contractBody = {
-    schemaVersion: "shipcheck-acceptance-contract-v1.0.0" as const,
-    contractId: options.createContractId(),
-    compilerVersion: options.compilerVersion,
-    policyVersion: options.policyVersion,
-    executionPolicyVersion: options.executionPolicyVersion,
-    target: new URL(request.deliveryUrl).toString(),
-    requirements,
-    createdAt: options.now(),
-  };
-
-  return AcceptanceContractSchema.parse({
-    ...contractBody,
-    contractHash: hashAcceptanceContract(contractBody),
-  });
+  return buildContract(request, requirements, options);
 }

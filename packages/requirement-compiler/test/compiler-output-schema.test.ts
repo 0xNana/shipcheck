@@ -37,7 +37,9 @@ describe("compilerOutputResponseSchema", () => {
   });
 
   it("lists every property key as required at every object level", () => {
-    expect(() => assertOpenAiStrictJsonSchema(compilerOutputResponseSchema())).not.toThrow();
+    expect(() => {
+      assertOpenAiStrictJsonSchema(compilerOutputResponseSchema());
+    }).not.toThrow();
   });
 
   it("normalizes sentinels into domain requirements", () => {

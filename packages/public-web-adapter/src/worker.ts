@@ -641,7 +641,13 @@ export class PublicWebWorker {
         chromium.launch({
           executablePath: this.options.executablePath,
           headless: true,
-          args: ["--disable-dev-shm-usage"],
+          // Railway already isolates the service container; Chromium's Linux
+          // namespace sandbox is unavailable to its non-root runtime user.
+          args: [
+            "--disable-dev-shm-usage",
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+          ],
         }),
         request.signal,
         (lateBrowser) => lateBrowser.close(),
@@ -792,7 +798,10 @@ export class PublicWebWorker {
         finalUrl,
         sha256: createHash("sha256").update(html, "utf8").digest("hex"),
       };
-    } catch {
+    } catch (error) {
+      emitStage("browser_failed", {
+        message: error instanceof Error ? error.message : String(error),
+      });
       results = checks.map(executionError);
       executionStatus = "INCOMPLETE";
     } finally {

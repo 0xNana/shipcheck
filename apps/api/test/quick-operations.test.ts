@@ -72,6 +72,7 @@ describe("quick verification orchestration", () => {
                 sourceText: "pricing",
                 start: 25,
                 end: 32,
+                rationale: "",
               },
               priority: "REQUIRED",
               prioritySource: "DEFAULT",
@@ -79,6 +80,7 @@ describe("quick verification orchestration", () => {
               class: "EXECUTABLE",
               adapter: "PUBLIC_WEB",
               intent: "SECTION_PRESENT",
+              clarification: "",
             },
           ],
         }),
@@ -186,6 +188,98 @@ describe("quick verification orchestration", () => {
     });
   });
 
+  it("falls back to deterministic checks when compilation exceeds its relay budget", async () => {
+    const stages: string[] = [];
+    const model: RequirementCompilerModel = {
+      generate: (request) =>
+        new Promise((_resolve, reject) => {
+          request.signal?.addEventListener(
+            "abort",
+            () => {
+              reject(
+                request.signal?.reason instanceof Error
+                  ? request.signal.reason
+                  : new Error("Compilation aborted"),
+              );
+            },
+            { once: true },
+          );
+        }),
+    };
+    const worker = {
+      executeWithEvidence: (
+        request: Parameters<PublicWebWorker["executeWithEvidence"]>[0],
+      ) =>
+        Promise.resolve({
+          executionStatus: "COMPLETED" as const,
+          targetFingerprint: {
+            finalUrl: request.target,
+            sha256: "b".repeat(64),
+          },
+          results: request.checks.map((check) => ({
+            checkId: check.checkId,
+            status: "SATISFIED" as const,
+            summary: "Baseline check passed.",
+            facts: {},
+          })),
+          blockedRequests: 0,
+          contextClosed: true,
+          browserClosed: true,
+          observations: request.checks.map((check) =>
+            ObservationSchema.parse({
+              observationId: `obs_${check.checkId}`,
+              checkId: check.checkId,
+              status: "OBSERVED_TRUE",
+              observedAt: "2026-07-12T20:00:00.000Z",
+              summary: "Baseline check passed.",
+              facts: {},
+              evidenceIds: [],
+            }),
+          ),
+          artifacts: [],
+          temporaryFilesCleaned: true,
+        }),
+    };
+    const operations = createQuickVerificationOperations({
+      compiler: {
+        model,
+        compilerVersion: "compiler-v1",
+        policyVersion: acceptancePolicy.policyVersion,
+        executionPolicyVersion: executionPolicy.policyVersion,
+        createContractId: () => "contract_fallback",
+        now: () => "2026-07-12T20:00:00.000Z",
+      },
+      compilerTimeoutMs: 10,
+      executionPolicy,
+      acceptancePolicy,
+      worker,
+      artifactSink: {
+        write: () => Promise.reject(new Error("No artifact expected")),
+      },
+      adapterVersion: "adapter-v1",
+      createReceiptId: () => "receipt_fallback",
+      now: () => "2026-07-12T20:00:01.000Z",
+      totalTimeoutMs: 1_000,
+      logger: {
+        log: (_level, _message, fields = {}) => {
+          if (typeof fields["stage"] === "string") {
+            stages.push(fields["stage"]);
+          }
+        },
+        debug: () => undefined,
+        info: () => undefined,
+        warn: () => undefined,
+        error: () => undefined,
+      },
+    });
+
+    const result = await operations.verify(input, "sc_req_fallback");
+
+    expect(result.response.results).toHaveLength(4);
+    expect(result.response.verdict).toBe("ACCEPTED");
+    expect(stages).toContain("compiler_fallback");
+  });
+
   it("bounds the complete billable flow by a total wall-clock timeout", async () => {
     let executionAborted = false;
     const model: RequirementCompilerModel = {
@@ -200,6 +294,7 @@ describe("quick verification orchestration", () => {
                 sourceText: "pricing",
                 start: 25,
                 end: 32,
+                rationale: "",
               },
               priority: "REQUIRED",
               prioritySource: "DEFAULT",
@@ -207,6 +302,7 @@ describe("quick verification orchestration", () => {
               class: "EXECUTABLE",
               adapter: "PUBLIC_WEB",
               intent: "SECTION_PRESENT",
+              clarification: "",
             },
           ],
         }),

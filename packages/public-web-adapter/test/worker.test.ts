@@ -28,6 +28,39 @@ beforeAll(async () => { fixtures = await startFixtureServer(); });
 afterAll(async () => { await fixtures.close(); });
 
 describe("public-web worker", () => {
+  it("reports the browser launch error when execution fails closed", async () => {
+    const stages: Array<{ stage: string; message?: unknown }> = [];
+    const worker = createPublicWebWorker({
+      executablePath: "/definitely/missing/chromium",
+      urlGuard: createFixtureUrlGuard(),
+      policy,
+    });
+
+    const result = await worker.executeWithEvidence(
+      {
+        target: fixtures.url("/"),
+        checks: [
+          check("CONTENT_PRESENT", { semanticTarget: "anything" }, 99),
+        ],
+      },
+      {
+        artifactSink: {
+          write: () => Promise.reject(new Error("No artifact expected")),
+        },
+        now: () => "2026-07-16T20:00:00.000Z",
+        onStage: (stage, extra) => stages.push({ stage, ...extra }),
+      },
+    );
+
+    expect(result.executionStatus).toBe("INCOMPLETE");
+    const failure = stages.find(({ stage }) => stage === "browser_failed");
+    expect(failure).toBeDefined();
+    expect(typeof failure?.message).toBe("string");
+    if (typeof failure?.message === "string") {
+      expect(failure.message).toContain("executable doesn't exist");
+    }
+  });
+
   it("executes finite checks in an isolated Chromium context", async () => {
     const worker = createPublicWebWorker({
       executablePath: "/usr/bin/google-chrome", urlGuard: createFixtureUrlGuard(), policy,

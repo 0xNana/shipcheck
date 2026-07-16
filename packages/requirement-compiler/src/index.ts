@@ -1,4 +1,5 @@
 export {
+  compileBaselineRequirements,
   compileRequirements,
   RequirementCompilationError,
 } from "./compile-requirements.js";
