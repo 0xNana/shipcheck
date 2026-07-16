@@ -111,10 +111,14 @@ export function normalizeCompilerCandidateOutput(
 }
 
 export function compilerOutputResponseSchema(): Record<string, unknown> {
-  return z.toJSONSchema(CompilerOutputCandidateSchema) as Record<
+  const schema = z.toJSONSchema(CompilerOutputCandidateSchema) as Record<
     string,
     unknown
   >;
+  // OpenAI ignores the draft declaration; drop it to keep the payload minimal.
+  delete schema["$schema"];
+  assertOpenAiStrictJsonSchema(schema);
+  return schema;
 }
 
 /** Validates OpenAI strict json_schema shape (every object lists all property keys as required). */
@@ -144,14 +148,22 @@ export function assertOpenAiStrictJsonSchema(
   }
 }
 
+export type CompilerRequirementsParseResult =
+  | { readonly success: true; readonly data: Requirement[] }
+  | { readonly success: false; readonly error: z.ZodError };
+
 export function parseCompilerRequirementsFromModelOutput(
   rawOutput: unknown,
-): z.SafeParseReturnType<unknown, Requirement[]> {
+): CompilerRequirementsParseResult {
   const candidate = CompilerOutputCandidateSchema.safeParse(rawOutput);
   if (!candidate.success) {
-    return candidate as z.SafeParseReturnType<unknown, Requirement[]>;
+    return { success: false, error: candidate.error };
   }
-  return z.array(RequirementSchema).safeParse(
-    normalizeCompilerCandidateOutput(candidate.data),
-  );
+  const parsed = z
+    .array(RequirementSchema)
+    .safeParse(normalizeCompilerCandidateOutput(candidate.data));
+  if (!parsed.success) {
+    return { success: false, error: parsed.error };
+  }
+  return { success: true, data: parsed.data };
 }
