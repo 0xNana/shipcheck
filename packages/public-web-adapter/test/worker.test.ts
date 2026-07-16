@@ -29,7 +29,7 @@ afterAll(async () => { await fixtures.close(); });
 
 describe("public-web worker", () => {
   it("reports the browser launch error when execution fails closed", async () => {
-    const stages: Array<{ stage: string; message?: unknown }> = [];
+    const stages: Array<{ stage: string; error?: unknown }> = [];
     const worker = createPublicWebWorker({
       executablePath: "/definitely/missing/chromium",
       urlGuard: createFixtureUrlGuard(),
@@ -55,9 +55,9 @@ describe("public-web worker", () => {
     expect(result.executionStatus).toBe("INCOMPLETE");
     const failure = stages.find(({ stage }) => stage === "browser_failed");
     expect(failure).toBeDefined();
-    expect(typeof failure?.message).toBe("string");
-    if (typeof failure?.message === "string") {
-      expect(failure.message).toContain("executable doesn't exist");
+    expect(typeof failure?.error).toBe("string");
+    if (typeof failure?.error === "string") {
+      expect(failure.error).toContain("executable doesn't exist");
     }
   });
 

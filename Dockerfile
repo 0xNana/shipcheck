@@ -18,7 +18,7 @@ COPY config ./config
 RUN pnpm --filter @shipcheck/web... build
 RUN pnpm --filter @shipcheck/api... build
 
-FROM mcr.microsoft.com/playwright:v1.54.1-noble AS runtime
+FROM mcr.microsoft.com/playwright:v1.61.1-noble AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 

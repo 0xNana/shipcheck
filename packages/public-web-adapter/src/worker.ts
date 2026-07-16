@@ -799,8 +799,9 @@ export class PublicWebWorker {
         sha256: createHash("sha256").update(html, "utf8").digest("hex"),
       };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       emitStage("browser_failed", {
-        message: error instanceof Error ? error.message : String(error),
+        error: errorMessage.split("\n", 1)[0]?.slice(0, 500) ?? "Unknown browser error",
       });
       results = checks.map(executionError);
       executionStatus = "INCOMPLETE";
