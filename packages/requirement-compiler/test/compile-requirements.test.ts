@@ -11,6 +11,57 @@ import {
 
 const brief = "Build a launch page with pricing.";
 
+function candidateRequirement(
+  partial: {
+    id: string;
+    statement: string;
+    class: "EXECUTABLE" | "AMBIGUOUS" | "SUBJECTIVE" | "UNSUPPORTED";
+    provenance: {
+      kind: "BRIEF_SPAN" | "DERIVED_BASELINE";
+      sourceText?: string;
+      start?: number;
+      end?: number;
+      rationale?: string;
+    };
+    adapter?: string;
+    intent?: string;
+    priority?: "CRITICAL" | "REQUIRED" | "OPTIONAL";
+    prioritySource?: "EXPLICIT" | "INFERRED" | "DEFAULT";
+    confidence?: number;
+    clarification?: string;
+  },
+) {
+  const provenance =
+    partial.provenance.kind === "BRIEF_SPAN"
+      ? {
+          kind: "BRIEF_SPAN" as const,
+          sourceText: partial.provenance.sourceText ?? "",
+          start: partial.provenance.start ?? 0,
+          end: partial.provenance.end ?? 0,
+          rationale: partial.provenance.rationale ?? "",
+        }
+      : {
+          kind: "DERIVED_BASELINE" as const,
+          sourceText: partial.provenance.sourceText ?? "",
+          start: partial.provenance.start ?? 0,
+          end: partial.provenance.end ?? 0,
+          rationale: partial.provenance.rationale ?? "",
+        };
+
+  return {
+    id: partial.id,
+    statement: partial.statement,
+    class: partial.class,
+    provenance,
+    adapter: partial.adapter ?? "",
+    intent: partial.intent ?? "",
+    priority: partial.priority ?? "REQUIRED",
+    prioritySource: partial.prioritySource ?? "DEFAULT",
+    confidence: partial.confidence ?? 0.98,
+    clarification: partial.clarification ?? "",
+  };
+}
+
 class FixtureModel implements RequirementCompilerModel {
   readonly requests: CompilerModelRequest[] = [];
 
@@ -40,7 +91,7 @@ describe("compileRequirements", () => {
   it("assembles and hashes a validated contract from model candidates", async () => {
     const validOutput = {
       requirements: [
-        {
+        candidateRequirement({
           id: "req_pricing",
           statement: "A pricing section is present.",
           provenance: {
@@ -51,11 +102,8 @@ describe("compileRequirements", () => {
           },
           class: "EXECUTABLE",
           adapter: "PUBLIC_WEB",
-          priority: "REQUIRED",
-          prioritySource: "DEFAULT",
-          confidence: 0.98,
           intent: "SECTION_PRESENT",
-        },
+        }),
       ],
     };
     const model = new FixtureModel([validOutput]);
@@ -94,7 +142,7 @@ describe("compileRequirements", () => {
   it("makes exactly one constrained repair request after invalid output", async () => {
     const invalidOutput = {
       requirements: [
-        {
+        candidateRequirement({
           id: "req_pricing",
           statement: "A pricing section is present.",
           provenance: {
@@ -105,18 +153,25 @@ describe("compileRequirements", () => {
           },
           class: "EXECUTABLE",
           adapter: "PUBLIC_WEB",
-          priority: "REQUIRED",
-          prioritySource: "DEFAULT",
-          confidence: 0.98,
-        },
+          intent: "",
+        }),
       ],
     };
     const validOutput = {
       requirements: [
-        {
-          ...invalidOutput.requirements[0],
+        candidateRequirement({
+          id: "req_pricing",
+          statement: "A pricing section is present.",
+          provenance: {
+            kind: "BRIEF_SPAN",
+            sourceText: "pricing",
+            start: 25,
+            end: 32,
+          },
+          class: "EXECUTABLE",
+          adapter: "PUBLIC_WEB",
           intent: "SECTION_PRESENT",
-        },
+        }),
       ],
     };
     const model = new FixtureModel([invalidOutput, validOutput]);
@@ -147,7 +202,7 @@ describe("compileRequirements", () => {
   it("repairs source provenance that does not exactly match the brief", async () => {
     const invalidProvenance = {
       requirements: [
-        {
+        candidateRequirement({
           id: "req_pricing",
           statement: "A pricing section is present.",
           provenance: {
@@ -158,24 +213,25 @@ describe("compileRequirements", () => {
           },
           class: "EXECUTABLE",
           adapter: "PUBLIC_WEB",
-          priority: "REQUIRED",
-          prioritySource: "DEFAULT",
-          confidence: 0.98,
           intent: "SECTION_PRESENT",
-        },
+        }),
       ],
     };
     const repaired = {
       requirements: [
-        {
-          ...invalidProvenance.requirements[0],
+        candidateRequirement({
+          id: "req_pricing",
+          statement: "A pricing section is present.",
           provenance: {
             kind: "BRIEF_SPAN",
             sourceText: "pricing",
             start: 25,
             end: 32,
           },
-        },
+          class: "EXECUTABLE",
+          adapter: "PUBLIC_WEB",
+          intent: "SECTION_PRESENT",
+        }),
       ],
     };
     const model = new FixtureModel([invalidProvenance, repaired]);
@@ -192,14 +248,17 @@ describe("compileRequirements", () => {
       },
     );
 
-    expect(compiled.requirements[0]?.provenance).toEqual(
-      repaired.requirements[0]?.provenance,
-    );
+    expect(compiled.requirements[0]?.provenance).toEqual({
+      kind: "BRIEF_SPAN",
+      sourceText: "pricing",
+      start: 25,
+      end: 32,
+    });
     expect(model.requests).toHaveLength(2);
   });
 
   it("repairs duplicate candidate IDs before allocating a contract", async () => {
-    const requirement = {
+    const requirement = candidateRequirement({
       id: "req_pricing",
       statement: "A pricing section is present.",
       provenance: {
@@ -210,11 +269,8 @@ describe("compileRequirements", () => {
       },
       class: "EXECUTABLE",
       adapter: "PUBLIC_WEB",
-      priority: "REQUIRED",
-      prioritySource: "DEFAULT",
-      confidence: 0.98,
       intent: "SECTION_PRESENT",
-    };
+    });
     const model = new FixtureModel([
       { requirements: [requirement, requirement] },
       { requirements: [requirement] },
@@ -241,7 +297,7 @@ describe("compileRequirements", () => {
     const model = new FixtureModel([
       {
         requirements: [
-          {
+          candidateRequirement({
             id: "req_z",
             statement: "A pricing section is present.",
             provenance: {
@@ -252,12 +308,10 @@ describe("compileRequirements", () => {
             },
             class: "EXECUTABLE",
             adapter: "PUBLIC_WEB",
-            priority: "REQUIRED",
-            prioritySource: "DEFAULT",
-            confidence: 0.9,
             intent: "SECTION_PRESENT",
-          },
-          {
+            confidence: 0.9,
+          }),
+          candidateRequirement({
             id: "req_a",
             statement: "a  PRICING section is present!",
             provenance: {
@@ -268,11 +322,9 @@ describe("compileRequirements", () => {
             },
             class: "EXECUTABLE",
             adapter: "PUBLIC_WEB",
-            priority: "REQUIRED",
-            prioritySource: "DEFAULT",
-            confidence: 0.95,
             intent: "SECTION_PRESENT",
-          },
+            confidence: 0.95,
+          }),
         ],
       },
     ]);
@@ -295,7 +347,7 @@ describe("compileRequirements", () => {
   });
 
   it("produces the same contract hash for reordered model candidates", async () => {
-    const pricing = {
+    const pricing = candidateRequirement({
       id: "req_pricing",
       statement: "A pricing section is present.",
       provenance: {
@@ -306,12 +358,10 @@ describe("compileRequirements", () => {
       },
       class: "EXECUTABLE",
       adapter: "PUBLIC_WEB",
-      priority: "REQUIRED",
-      prioritySource: "DEFAULT",
-      confidence: 0.9,
       intent: "SECTION_PRESENT",
-    };
-    const launchPage = {
+      confidence: 0.9,
+    });
+    const launchPage = candidateRequirement({
       id: "req_launch",
       statement: "A launch page is present.",
       provenance: {
@@ -322,11 +372,9 @@ describe("compileRequirements", () => {
       },
       class: "EXECUTABLE",
       adapter: "PUBLIC_WEB",
-      priority: "REQUIRED",
-      prioritySource: "DEFAULT",
-      confidence: 0.9,
       intent: "CONTENT_PRESENT",
-    };
+      confidence: 0.9,
+    });
     const options = {
       compilerVersion: "compiler-v1",
       policyVersion: "policy-v1",

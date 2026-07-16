@@ -11,15 +11,13 @@ import { z } from "zod";
 import { buildCompilerPrompt } from "./prompt.js";
 import { normalizeAndDeduplicateRequirements } from "./normalize-requirements.js";
 import {
-  CompilerOutputCandidateSchema,
   compilerOutputResponseSchema,
+  parseCompilerRequirementsFromModelOutput,
 } from "./compiler-output-schema.js";
 import type {
   CompiledAcceptanceContract,
   RequirementCompilerOptions,
 } from "./types.js";
-
-const CompilerOutputSchema = CompilerOutputCandidateSchema;
 
 interface ValidCompilerOutput {
   readonly success: true;
@@ -38,19 +36,7 @@ function validateCompilerOutput(
   brief: string,
   maxRequirements: number,
 ): CompilerOutputValidation {
-  const parsed = CompilerOutputSchema.safeParse(rawOutput);
-  if (!parsed.success) {
-    return {
-      success: false,
-      issues: parsed.error.issues.map(
-        (issue) => `${issue.path.join(".") || "output"}: ${issue.message}`,
-      ),
-    };
-  }
-
-  const requirementParse = z.array(RequirementSchema).safeParse(
-    parsed.data.requirements,
-  );
+  const requirementParse = parseCompilerRequirementsFromModelOutput(rawOutput);
   if (!requirementParse.success) {
     return {
       success: false,
