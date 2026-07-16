@@ -86,8 +86,11 @@ export function createOpenAiCompilerModel(
           signal: controller.signal,
         });
         if (!response.ok) {
+          const errorBody = await response.text().catch(() => "");
+          const detail =
+            errorBody.length > 0 ? errorBody.slice(0, 500) : "no response body";
           throw new Error(
-            `OpenAI chat completion failed with status ${String(response.status)}`,
+            `OpenAI chat completion failed with status ${String(response.status)}: ${detail}`,
           );
         }
         const payload = (await response.json()) as ChatCompletionResponse;

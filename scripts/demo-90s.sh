@@ -6,7 +6,7 @@ PORT="${PORT:-3100}"
 BASE_URL="http://127.0.0.1:${PORT}"
 # Bash treats `$0` as the script name inside "${VAR:-$0.01}" — set explicitly.
 SHIPCHECK_PRICE='$0.01'
-REQUIREMENT_COMPILER_MODEL='gpt-4.1-mini'
+REQUIREMENT_COMPILER_MODEL='gpt-5.6-terra'
 
 cleanup() {
   if [[ -n "${API_PID:-}" ]]; then

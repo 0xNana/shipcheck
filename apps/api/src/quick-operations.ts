@@ -106,6 +106,16 @@ export function createQuickVerificationOperations(
     } catch (error) {
       if (error instanceof RequirementCompilationError) {
         options.metrics?.recordCompilerFailure();
+      } else if (error instanceof Error) {
+        options.logger?.error("compile.failed", {
+          message: error.message,
+          stage: "compiler",
+        });
+        throw new ServiceError(
+          503,
+          "EXECUTION_UNAVAILABLE",
+          "Requirement compiler is temporarily unavailable",
+        );
       }
       throw error;
     }
@@ -139,6 +149,17 @@ export function createQuickVerificationOperations(
         } catch (error) {
           if (error instanceof RequirementCompilationError) {
             options.metrics?.recordCompilerFailure();
+          } else if (error instanceof Error) {
+            options.logger?.error("verify.compiler_failed", {
+              requestId,
+              message: error.message,
+              stage: "compiler",
+            });
+            throw new ServiceError(
+              503,
+              "EXECUTION_UNAVAILABLE",
+              "Requirement compiler is temporarily unavailable",
+            );
           }
           throw error;
         }

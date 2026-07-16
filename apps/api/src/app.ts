@@ -716,6 +716,14 @@ export function createApiApp(options: ApiAppOptions): Express {
       );
       return;
     }
+    options.telemetry?.logger.error("request.unhandled_error", {
+      requestId:
+        typeof response.locals["requestId"] === "string"
+          ? (response.locals["requestId"] as string)
+          : undefined,
+      message: error instanceof Error ? error.message : String(error),
+      stage: "error_handler",
+    });
     sendError(
       response,
       500,

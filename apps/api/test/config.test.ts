@@ -5,7 +5,7 @@ import { loadApiConfig } from "../src/config.js";
 const requiredEnv = {
   PUBLIC_BASE_URL: "https://shipcheck.example",
   OPENAI_API_KEY: "sk-test",
-  REQUIREMENT_COMPILER_MODEL: "gpt-4.1-mini",
+  REQUIREMENT_COMPILER_MODEL: "gpt-5.6-terra",
   DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:5432/shipcheck",
   TIGRIS_STORAGE_ENDPOINT: "https://t3.storage.dev",
   TIGRIS_STORAGE_ACCESS_KEY_ID: "key",
