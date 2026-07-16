@@ -10,29 +10,16 @@ import { z } from "zod";
 
 import { buildCompilerPrompt } from "./prompt.js";
 import { normalizeAndDeduplicateRequirements } from "./normalize-requirements.js";
+import {
+  CompilerOutputCandidateSchema,
+  compilerOutputResponseSchema,
+} from "./compiler-output-schema.js";
 import type {
   CompiledAcceptanceContract,
   RequirementCompilerOptions,
 } from "./types.js";
 
-const CompilerOutputSchema = z
-  .object({
-    requirements: z.array(RequirementSchema).min(1).max(12),
-  })
-  .strict()
-  .superRefine(({ requirements }, context) => {
-    const ids = new Set<string>();
-    requirements.forEach((requirement, index) => {
-      if (ids.has(requirement.id)) {
-        context.addIssue({
-          code: "custom",
-          message: "Candidate requirement IDs must be unique",
-          path: ["requirements", index, "id"],
-        });
-      }
-      ids.add(requirement.id);
-    });
-  });
+const CompilerOutputSchema = CompilerOutputCandidateSchema;
 
 interface ValidCompilerOutput {
   readonly success: true;
@@ -61,8 +48,20 @@ function validateCompilerOutput(
     };
   }
 
+  const requirementParse = z.array(RequirementSchema).safeParse(
+    parsed.data.requirements,
+  );
+  if (!requirementParse.success) {
+    return {
+      success: false,
+      issues: requirementParse.error.issues.map(
+        (issue) => `${issue.path.join(".") || "output"}: ${issue.message}`,
+      ),
+    };
+  }
+
   const issues: string[] = [];
-  for (const requirement of parsed.data.requirements) {
+  for (const requirement of requirementParse.data) {
     if (!validateRequirementProvenance(requirement.provenance, brief)) {
       issues.push(
         `requirements.${requirement.id}.provenance: source span does not match the brief`,
@@ -71,7 +70,7 @@ function validateCompilerOutput(
   }
 
   const normalizedRequirements = normalizeAndDeduplicateRequirements(
-    parsed.data.requirements,
+    requirementParse.data,
   );
   if (normalizedRequirements.length > maxRequirements) {
     issues.push("requirements: normalized output exceeds maxRequirements");
@@ -100,7 +99,7 @@ export async function compileRequirements(
   const request = VerifyRequestSchema.parse(input);
   const allowedIntents = CheckIntentSchema.options;
   const systemPrompt = buildCompilerPrompt(allowedIntents);
-  const responseSchema = z.toJSONSchema(CompilerOutputSchema);
+  const responseSchema = compilerOutputResponseSchema();
   const firstOutput = await options.model.generate({
     systemPrompt,
     brief: request.brief,
