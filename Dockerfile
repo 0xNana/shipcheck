@@ -22,10 +22,14 @@ FROM mcr.microsoft.com/playwright:v1.61.1-noble AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
-RUN groupadd --system shipcheck && useradd --system --gid shipcheck shipcheck \
+RUN groupadd --system shipcheck \
+  && useradd --system --create-home --home-dir /home/shipcheck --gid shipcheck shipcheck \
+  && mkdir -p /home/shipcheck/.cache /home/shipcheck/.config \
+  && chown -R shipcheck:shipcheck /home/shipcheck \
   && CHROMIUM="$(find /ms-playwright -name chrome -type f | head -1)" \
   && ln -sf "${CHROMIUM}" /usr/local/bin/shipcheck-chromium
 ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/local/bin/shipcheck-chromium
+ENV HOME=/home/shipcheck
 
 # pnpm resolves workspace deps via apps/*/node_modules and packages/*/node_modules
 # symlinks into /app/node_modules/.pnpm — all three trees are required at runtime.
