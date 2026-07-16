@@ -237,7 +237,7 @@ export function createApiApp(options: ApiAppOptions): Express {
     sendError(
       response,
       405,
-      "METHOD_NOT_ALLOWED",
+      "INVALID_REQUEST",
       "Use POST /v1/verify with a JSON body to run verification",
     );
   };
