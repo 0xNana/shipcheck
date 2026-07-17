@@ -40,6 +40,26 @@ interface PageOptions {
   readonly popupStorm?: boolean;
 }
 
+function menuContentPage(): string {
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Menu fixture</title>
+  <style>.hidden{display:none}</style>
+</head>
+<body>
+  <nav aria-label="Primary">
+    <span class="hidden">Private Balance</span>
+    <a href="/explore">Explore Live Funds</a>
+    <a href="/private-balance">Private balance</a>
+    <a href="/how-it-works">How it works</a>
+  </nav>
+</body>
+</html>`;
+}
+
 function page(options: PageOptions = {}): string {
   const includePricing = options.includePricing ?? true;
   const docsHref = options.docsHref ?? "/docs";
@@ -152,6 +172,9 @@ async function handle(
       return;
     case "/slow":
       send(response, 200, page({ waitlistAction: "/api/slow" }));
+      return;
+    case "/menu-content":
+      send(response, 200, menuContentPage());
       return;
     case "/redirect-private":
       send(response, 302, "Redirecting", "text/html; charset=utf-8", {

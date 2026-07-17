@@ -126,7 +126,7 @@ export const VerifyRequestSchema = z
     brief: z.string().min(10).max(12_000),
     deliveryUrl: HttpsUrlSchema,
     mode: z.literal("quick").default("quick"),
-    maxRequirements: z.number().int().min(1).max(12).default(12),
+    maxRequirements: z.coerce.number().int().min(1).max(12).default(12),
     idempotencyKey: z.string().min(8).max(128).optional(),
   })
   .strict();

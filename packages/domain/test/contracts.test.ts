@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   AcceptanceContractSchema,
   AcceptancePolicySchema,
+  VerifyRequestSchema,
   validateRequirementProvenance,
 } from "../src/index.js";
 
@@ -37,6 +38,19 @@ const validContract = {
   createdAt: "2026-07-11T20:00:00Z",
   contractHash: "0".repeat(64),
 } as const;
+
+describe("VerifyRequestSchema", () => {
+  it("accepts numeric maxRequirements from string form parameters", () => {
+    expect(
+      VerifyRequestSchema.parse({
+        brief: "Build a simple public landing page with a visible headline.",
+        deliveryUrl: "https://example.com",
+        mode: "quick",
+        maxRequirements: "4",
+      }),
+    ).toMatchObject({ maxRequirements: 4 });
+  });
+});
 
 describe("AcceptanceContractSchema", () => {
   it("accepts a strict executable requirement contract", () => {

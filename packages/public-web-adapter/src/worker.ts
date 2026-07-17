@@ -185,11 +185,43 @@ function blockedFormText(value: string): boolean {
   );
 }
 
+function normalizeVisibleText(value: string): string {
+  return value.toLocaleLowerCase().replace(/\s+/gu, " ").trim();
+}
+
 async function semanticVisible(
   page: Page,
   semanticTarget: string,
 ): Promise<boolean> {
-  return page.getByText(semanticTarget, { exact: false }).first().isVisible();
+  const target = normalizeVisibleText(semanticTarget);
+  if (target.length === 0) return false;
+  return page.evaluate((expected) => {
+    const ignoredTags = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE", "HEAD"]);
+    const normalize = (value: string): string =>
+      value.toLocaleLowerCase().replace(/\s+/gu, " ").trim();
+    const elementVisible = (element: Element): boolean => {
+      if (ignoredTags.has(element.tagName)) return false;
+      if (element.closest("[hidden], [aria-hidden=\"true\"]") !== null) {
+        return false;
+      }
+      const style = window.getComputedStyle(element);
+      if (
+        style.display === "none" ||
+        style.visibility === "hidden" ||
+        style.visibility === "collapse" ||
+        Number(style.opacity) === 0
+      ) {
+        return false;
+      }
+      return element.getClientRects().length > 0;
+    };
+    for (const element of Array.from(document.body.querySelectorAll("*"))) {
+      if (!elementVisible(element)) continue;
+      const text = normalize((element as HTMLElement).innerText ?? element.textContent ?? "");
+      if (text.includes(expected)) return true;
+    }
+    return false;
+  }, target);
 }
 
 async function executeFormCheck(

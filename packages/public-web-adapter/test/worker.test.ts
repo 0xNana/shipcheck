@@ -87,6 +87,22 @@ describe("public-web worker", () => {
     expect(result.browserClosed).toBe(true);
   }, 15_000);
 
+  it("finds visible content after hidden matches and case differences", async () => {
+    const worker = createPublicWebWorker({ executablePath: "/usr/bin/google-chrome", urlGuard: createFixtureUrlGuard(), policy });
+
+    const result = await worker.execute({
+      target: fixtures.url("/menu-content"),
+      checks: [
+        check("CONTENT_PRESENT", { semanticTarget: "Explore" }, 40),
+        check("CONTENT_PRESENT", { semanticTarget: "Private Balance" }, 41),
+        check("CONTENT_PRESENT", { semanticTarget: "How It Works" }, 42),
+      ],
+    });
+
+    expect(result.executionStatus).toBe("COMPLETED");
+    expect(result.results.every(({ status }) => status === "SATISFIED")).toBe(true);
+  }, 15_000);
+
   it("reports objective contradictions without turning them into worker errors", async () => {
     const worker = createPublicWebWorker({ executablePath: "/usr/bin/google-chrome", urlGuard: createFixtureUrlGuard(), policy });
     const [missingSection, overflow, brokenImage, consoleError] = await Promise.all([
