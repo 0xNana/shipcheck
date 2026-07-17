@@ -29,7 +29,6 @@ export function createVerifyStageLogger(options: {
       return;
     }
     // Fallback for tests / early boot — still scrub sensitive keys.
-    // eslint-disable-next-line no-console -- Railway stage diagnostics
     console.log(
       sanitizeLogFields({
         message: "verify.stage",

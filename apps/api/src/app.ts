@@ -121,6 +121,101 @@ function parseRequest(input: unknown): VerifyRequest {
   }
 }
 
+
+function firstQueryString(value: unknown): string | undefined {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = firstQueryString(item);
+      if (found !== undefined) return found;
+    }
+  }
+  return undefined;
+}
+
+function queryInteger(value: string | undefined): number | undefined {
+  if (value === undefined) return undefined;
+  const parsed = Number(value);
+  return Number.isInteger(parsed) ? parsed : undefined;
+}
+
+function normalizeDeliveryUrl(value: string | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  const trimmed = value.trim().replace(/[),.;]+$/u, "");
+  if (/^https:\/\//iu.test(trimmed)) return trimmed;
+  if (/^[a-z0-9.-]+\.[a-z]{2,}(?:\/[^\s]*)?$/iu.test(trimmed)) {
+    return `https://${trimmed}`;
+  }
+  return trimmed;
+}
+
+function extractDeliveryUrlFromText(value: string): string | undefined {
+  const labeled = value.match(
+    /(?:delivery\s*url|deliveryUrl|url|website|site)\s*[:=]\s*(https?:\/\/[^\s,;"')<>]+|[a-z0-9.-]+\.[a-z]{2,}(?:\/[^\s,;"')<>]*)?)/iu,
+  );
+  if (labeled?.[1] !== undefined) return normalizeDeliveryUrl(labeled[1]);
+  const fallback = value.match(
+    /\b(https?:\/\/[^\s,;"')<>]+|[a-z0-9.-]+\.[a-z]{2,}(?:\/[^\s,;"')<>]*)?)\b/iu,
+  );
+  return normalizeDeliveryUrl(fallback?.[1]);
+}
+
+function extractBriefFromText(value: string, deliveryUrl: string | undefined): string {
+  const labeled = value.match(
+    /(?:brief|task|description|prompt)\s*[:=]\s*(.*?)(?:[;,]\s*(?:delivery\s*url|deliveryUrl|url|website|site)\s*[:=]|$)/isu,
+  );
+  const raw = labeled?.[1] ?? value;
+  const withoutUrl =
+    deliveryUrl === undefined
+      ? raw
+      : raw
+          .replace(deliveryUrl, "")
+          .replace(deliveryUrl.replace(/^https:\/\//iu, ""), "");
+  return withoutUrl
+    .replace(/(?:delivery\s*url|deliveryUrl|url|website|site)\s*[:=]\s*$/iu, "")
+    .replace(/[;,\s]+$/u, "")
+    .trim();
+}
+
+function parseQueryRequest(query: unknown): VerifyRequest {
+  const source =
+    typeof query === "object" && query !== null
+      ? (query as Record<string, unknown>)
+      : {};
+  const serviceParams =
+    firstQueryString(source["serviceParams"]) ??
+    firstQueryString(source["params"]) ??
+    firstQueryString(source["service_params"]) ??
+    firstQueryString(source["input"]);
+  const deliveryUrl =
+    normalizeDeliveryUrl(
+      firstQueryString(source["deliveryUrl"]) ??
+        firstQueryString(source["delivery_url"]) ??
+        firstQueryString(source["url"]),
+    ) ??
+    (serviceParams === undefined
+      ? undefined
+      : extractDeliveryUrlFromText(serviceParams));
+  const brief =
+    firstQueryString(source["brief"]) ??
+    (serviceParams === undefined
+      ? undefined
+      : extractBriefFromText(serviceParams, deliveryUrl));
+  return parseRequest({
+    brief,
+    deliveryUrl,
+    mode: firstQueryString(source["mode"]) ?? "quick",
+    maxRequirements: queryInteger(
+      firstQueryString(source["maxRequirements"]) ??
+        firstQueryString(source["max_requirements"]),
+    ),
+    idempotencyKey:
+      firstQueryString(source["idempotencyKey"]) ??
+      firstQueryString(source["idempotency_key"]) ??
+      undefined,
+  });
+}
+
 function idempotencyKey(
   headerValue: string | undefined,
   input: VerifyRequest,
@@ -233,16 +328,6 @@ export function createApiApp(options: ApiAppOptions): Express {
       503,
       "EXECUTION_UNAVAILABLE",
       "Verification is temporarily disabled",
-    );
-  };
-
-  /** Paid GET is unsupported — real verification requires a POST JSON body. */
-  const verifyGetNotAllowedHandler: RequestHandler = (_request, response) => {
-    sendError(
-      response,
-      405,
-      "INVALID_REQUEST",
-      "Use POST /v1/verify with a JSON body to run verification",
     );
   };
 
@@ -368,8 +453,8 @@ export function createApiApp(options: ApiAppOptions): Express {
     middleware: RequestHandler,
   ): RequestHandler => {
     return (request, response, next) => {
-      const requestId = response.locals["requestId"];
-      const startedAt = response.locals["verifyStartedAt"];
+      const requestId: unknown = response.locals["requestId"];
+      const startedAt: unknown = response.locals["verifyStartedAt"];
       if (typeof requestId !== "string" || typeof startedAt !== "number") {
         middleware(request, response, next);
         return;
@@ -404,18 +489,21 @@ export function createApiApp(options: ApiAppOptions): Express {
     const context = response.locals["idempotency"] as
       | IdempotencyContext
       | undefined;
-    const input = context?.input ?? parseRequest(request.body);
+    const queryInput = response.locals["verifyInput"] as
+      | VerifyRequest
+      | undefined;
+    const input = context?.input ?? queryInput ?? parseRequest(request.body);
     const key =
       context?.key ??
       idempotencyKey(request.get("Idempotency-Key"), input);
     const fingerprint = context?.fingerprint ?? requestFingerprint(input);
     const activeRequestId =
       typeof response.locals["requestId"] === "string"
-        ? (response.locals["requestId"] as string)
+        ? response.locals["requestId"]
         : options.createRequestId();
     const startedAt =
       typeof response.locals["verifyStartedAt"] === "number"
-        ? (response.locals["verifyStartedAt"] as number)
+        ? response.locals["verifyStartedAt"]
         : Date.now();
     response.locals["requestId"] = activeRequestId;
     response.locals["verifyStartedAt"] = startedAt;
@@ -462,7 +550,7 @@ export function createApiApp(options: ApiAppOptions): Express {
       claimAcquired = true;
     }
 
-    let requestId: string | undefined = activeRequestId;
+    const requestId = activeRequestId;
     let requestStored = false;
     let receiptIdToRollback: string | undefined;
     const rollback = async (preserveClaim: boolean): Promise<void> => {
@@ -475,7 +563,7 @@ export function createApiApp(options: ApiAppOptions): Express {
           .delete(receiptIdToRollback)
           .catch((error: unknown) => failures.push(error));
       }
-      if (requestStored && requestId !== undefined) {
+      if (requestStored) {
         await options.requestStore
           .update(requestId, {
             status: "FAILED",
@@ -550,11 +638,19 @@ export function createApiApp(options: ApiAppOptions): Express {
       ? []
       : [withPaymentStageLogging(options.paymentMiddleware)];
 
+  const verifyGetInput: RequestHandler = (request, response, next) => {
+    response.locals["verifyInput"] = parseQueryRequest(request.query);
+    next();
+  };
+
   app.get(
     "/v1/verify",
+    verifyStageContext,
+    settlementPersistence,
     ...verifyPaymentMiddleware,
     ...(options.verificationEnabled === false ? [verificationDisabledHandler] : []),
-    verifyGetNotAllowedHandler,
+    verifyGetInput,
+    verifyHandler,
   );
 
   app.post(
@@ -723,7 +819,7 @@ export function createApiApp(options: ApiAppOptions): Express {
     options.telemetry?.logger.error("request.unhandled_error", {
       requestId:
         typeof response.locals["requestId"] === "string"
-          ? (response.locals["requestId"] as string)
+          ? response.locals["requestId"]
           : undefined,
       message: error instanceof Error ? error.message : String(error),
       stage: "error_handler",

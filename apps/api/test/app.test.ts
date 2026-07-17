@@ -331,6 +331,48 @@ describe("ShipCheck API", () => {
     expect(order).toEqual(["payment", "payment", "payment", "business"]);
   });
 
+  it("executes paid GET marketplace replays from service params", async () => {
+    const paymentMiddleware: RequestHandler = (request, response, next) => {
+      if (request.get("X-Test-Payment") !== "valid") {
+        response.status(402).json({ x402Version: 2 });
+        return;
+      }
+      next();
+    };
+    const { app, verify } = setup({ paymentMiddleware });
+
+    await request(app)
+      .get("/v1/verify")
+      .set("X-Test-Payment", "valid")
+      .query({
+        serviceParams:
+          "brief: Verify whether certified Zama ecosystem developer is visible; delivery URL: chriswilder.xyz",
+        maxRequirements: "4",
+      })
+      .expect(200);
+
+    expect(verify).toHaveBeenCalledWith(
+      {
+        brief: "Verify whether certified Zama ecosystem developer is visible",
+        deliveryUrl: "https://chriswilder.xyz",
+        mode: "quick",
+        maxRequirements: 4,
+      },
+      "sc_req_1",
+    );
+  });
+
+  it("rejects paid GET marketplace replays without enough input", async () => {
+    const paymentMiddleware: RequestHandler = (_request, _response, next) => {
+      next();
+    };
+    const { app, verify } = setup({ paymentMiddleware });
+
+    await request(app).get("/v1/verify").expect(400);
+
+    expect(verify).not.toHaveBeenCalled();
+  });
+
   it("keeps the GET verification probe behind x402 when verification is disabled", async () => {
     const paymentMiddleware = vi.fn<RequestHandler>((_request, response) => {
       response.status(402).json({ x402Version: 2 });

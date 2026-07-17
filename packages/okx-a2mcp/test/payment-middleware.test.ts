@@ -44,6 +44,48 @@ const verifyResource = {
   ],
   description: "ShipCheck Quick Acceptance verification",
   mimeType: "application/json",
+  outputSchema: {
+    input: {
+      type: "http",
+      method: "POST",
+      bodyType: "json",
+      body: {
+        type: "object",
+        required: ["brief", "deliveryUrl"],
+        additionalProperties: false,
+        properties: {
+          brief: {
+            type: "string",
+            minLength: 10,
+            maxLength: 12_000,
+            description: "Original acceptance brief to verify.",
+          },
+          deliveryUrl: {
+            type: "string",
+            format: "uri",
+            pattern: "^https://",
+            description: "Public HTTPS URL of the delivered website.",
+          },
+          mode: {
+            type: "string",
+            enum: ["quick"],
+            default: "quick",
+          },
+          maxRequirements: {
+            type: "integer",
+            minimum: 1,
+            maximum: 12,
+            default: 12,
+          },
+          idempotencyKey: {
+            type: "string",
+            minLength: 8,
+            maxLength: 128,
+          },
+        },
+      },
+    },
+  },
 };
 
 describe("createOkxPaymentMiddleware", () => {
