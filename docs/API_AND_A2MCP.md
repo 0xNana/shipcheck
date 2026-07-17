@@ -14,8 +14,13 @@ POST /v1/verify
 
 Unpaid calls must return **HTTP 402** with an x402 `PAYMENT-REQUIRED` challenge.
 `GET /v1/verify` returns the same 402 challenge for body-less marketplace probes
-(`onchainos agent x402-validate`). Billable verification still requires **POST**
-with a JSON body.
+(`onchainos agent x402-validate`). The base host URL is only the landing page;
+register the full endpoint `https://shipcheck.up.railway.app/v1/verify` on OKX.AI.
+Billable verification still requires **POST** with a JSON body.
+
+The `PAYMENT-REQUIRED` challenge must advertise an HTTPS `resource.url`. If it
+contains `http://`, the reverse proxy is not trusted and OKX review may treat
+the endpoint as non-compliant even though the host is reachable.
 
 For manual checks, `onchainos agent x402-check` works with or without `--body`
 once GET probes are enabled:

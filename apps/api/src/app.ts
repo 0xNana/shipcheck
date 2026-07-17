@@ -192,6 +192,10 @@ function sendError(
 export function createApiApp(options: ApiAppOptions): Express {
   const app = express();
   app.disable("x-powered-by");
+  // Railway terminates TLS before forwarding to Express. The x402 middleware
+  // derives the protected resource URL from req.protocol, so proxy trust keeps
+  // PAYMENT-REQUIRED challenges on the public https origin.
+  app.set("trust proxy", 1);
   if (options.corsAllowedOrigins !== undefined && options.corsAllowedOrigins.length > 0) {
     app.use(createCorsMiddleware(options.corsAllowedOrigins));
   }
@@ -548,8 +552,8 @@ export function createApiApp(options: ApiAppOptions): Express {
 
   app.get(
     "/v1/verify",
-    ...(options.verificationEnabled === false ? [verificationDisabledHandler] : []),
     ...verifyPaymentMiddleware,
+    ...(options.verificationEnabled === false ? [verificationDisabledHandler] : []),
     verifyGetNotAllowedHandler,
   );
 

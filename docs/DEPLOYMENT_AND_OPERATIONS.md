@@ -141,6 +141,7 @@ Historical receipts must remain verifiable under original versions.
 - canonical tests pass;
 - SSRF suite passes;
 - unpaid route returns 402;
+- `PAYMENT-REQUIRED` decodes to an `https://` `resource.url`;
 - testnet purchase succeeds;
 - browser patched;
 - evidence expiry tested;

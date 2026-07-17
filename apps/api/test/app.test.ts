@@ -198,6 +198,12 @@ describe("ShipCheck API", () => {
     expect(verify).not.toHaveBeenCalled();
   });
 
+  it("trusts reverse proxy headers for public x402 resource URLs", () => {
+    const { app } = setup();
+
+    expect(app.get("trust proxy")).toBe(1);
+  });
+
   it("validates and compiles a typed request", async () => {
     const { app, compile } = setup();
 
@@ -323,6 +329,21 @@ describe("ShipCheck API", () => {
       .send(verifyInput)
       .expect(200);
     expect(order).toEqual(["payment", "payment", "payment", "business"]);
+  });
+
+  it("keeps the GET verification probe behind x402 when verification is disabled", async () => {
+    const paymentMiddleware = vi.fn<RequestHandler>((_request, response) => {
+      response.status(402).json({ x402Version: 2 });
+    });
+    const { app, verify } = setup({
+      paymentMiddleware,
+      verificationEnabled: false,
+    });
+
+    await request(app).get("/v1/verify").expect(402, { x402Version: 2 });
+
+    expect(paymentMiddleware).toHaveBeenCalledTimes(1);
+    expect(verify).not.toHaveBeenCalled();
   });
 
   it("serves a completed idempotent replay before requesting payment again", async () => {
