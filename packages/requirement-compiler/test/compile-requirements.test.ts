@@ -116,6 +116,38 @@ describe("compileRequirements", () => {
     expect(contract.contractHash).toBe(hashAcceptanceContract(contract));
   });
 
+  it("keeps simple visible-control requirements in the compiler fallback", () => {
+    const contract = compileBaselineRequirements(
+      {
+        brief: "Verify whether the site has a Login button.",
+        deliveryUrl: "https://example.com",
+        maxRequirements: 5,
+      },
+      {
+        model: new FixtureModel([]),
+        compilerVersion: "compiler-v1",
+        policyVersion: "policy-v1",
+        executionPolicyVersion: "execution-v1",
+        createContractId: () => "contract_fallback_login",
+        now: () => "2026-07-12T10:00:00Z",
+      },
+    );
+
+    expect(contract.requirements[0]).toMatchObject({
+      id: "REQ-CONTENT-LOGIN",
+      statement: "Login",
+      class: "EXECUTABLE",
+      intent: "CONTENT_PRESENT",
+      priority: "REQUIRED",
+      prioritySource: "EXPLICIT",
+      provenance: {
+        kind: "BRIEF_SPAN",
+        sourceText: "Login",
+      },
+    });
+    expect(contract.requirements).toHaveLength(5);
+  });
+
   it("assembles and hashes a validated contract from model candidates", async () => {
     const validOutput = {
       requirements: [

@@ -34,8 +34,18 @@ function assertNever(value: never): never {
   throw new TypeError(`Unsupported check intent: ${String(value)}`);
 }
 
-function normalizeSemanticTarget(statement: string): string {
-  return statement.normalize("NFKC").replace(/\s+/gu, " ").trim();
+function normalizeSemanticTarget(value: string): string {
+  return value.normalize("NFKC").replace(/\s+/gu, " ").trim();
+}
+
+function semanticTargetFor(
+  requirement: Extract<Requirement, { class: "EXECUTABLE" }>,
+): string {
+  return normalizeSemanticTarget(
+    requirement.provenance.kind === "BRIEF_SPAN"
+      ? requirement.provenance.sourceText
+      : requirement.statement,
+  );
 }
 
 function checkIdFor(
@@ -58,7 +68,7 @@ function planCheck(
     requirementId: requirement.id,
     adapter: "PUBLIC_WEB" as const,
   };
-  const semanticTarget = normalizeSemanticTarget(requirement.statement);
+  const semanticTarget = semanticTargetFor(requirement);
 
   switch (requirement.intent) {
     case "CONTENT_PRESENT":

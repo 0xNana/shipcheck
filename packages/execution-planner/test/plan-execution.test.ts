@@ -106,6 +106,29 @@ describe("planExecution", () => {
     }
   });
 
+  it("plans semantic checks from exact brief-span text", () => {
+    const requirement = RequirementSchema.parse({
+      id: "req_login",
+      statement: "A Login button is present.",
+      provenance: {
+        kind: "BRIEF_SPAN",
+        sourceText: "Login",
+        start: 28,
+        end: 33,
+      },
+      class: "EXECUTABLE",
+      adapter: "PUBLIC_WEB",
+      priority: "REQUIRED",
+      prioritySource: "EXPLICIT",
+      confidence: 0.9,
+      intent: "CONTENT_PRESENT",
+    });
+
+    const plan = planExecution(contract([requirement]), policy);
+
+    expect(plan.checks[0]?.parameters).toEqual({ semanticTarget: "Login" });
+  });
+
   it("never creates checks for non-executable requirements", () => {
     const subjective = RequirementSchema.parse({
       id: "req_delightful",

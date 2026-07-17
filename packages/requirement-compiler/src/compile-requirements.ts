@@ -103,6 +103,62 @@ const baselineRequirements = [
   },
 ] as const;
 
+function findBriefSpan(brief: string, pattern: RegExp): {
+  readonly sourceText: string;
+  readonly start: number;
+  readonly end: number;
+} | undefined {
+  const match = pattern.exec(brief);
+  const captured = match?.[1];
+  if (match === null || captured === undefined) return undefined;
+  const offset = match[0].indexOf(captured);
+  if (offset < 0 || match.index < 0) return undefined;
+  const start = match.index + offset;
+  return {
+    sourceText: captured,
+    start,
+    end: start + captured.length,
+  };
+}
+
+function fallbackRequirementId(sourceText: string): string {
+  const normalized = sourceText
+    .normalize("NFKC")
+    .replace(/[^a-z0-9]+/giu, "-")
+    .replace(/^-|-$/gu, "")
+    .toUpperCase();
+  return `REQ-CONTENT-${normalized.length === 0 ? "TEXT" : normalized}`;
+}
+
+function compileExplicitFallbackRequirements(
+  brief: string,
+): z.infer<typeof RequirementSchema>[] {
+  const visibleControl = findBriefSpan(
+    brief,
+    /\bhas\s+(?:a|an|the)?\s*["'“‘]?([a-z][a-z0-9 ._-]{1,80}?)["'”’]?\s+(?:button|cta|link|control)\b/iu,
+  );
+  if (visibleControl === undefined) return [];
+
+  return [
+    RequirementSchema.parse({
+      id: fallbackRequirementId(visibleControl.sourceText),
+      statement: visibleControl.sourceText,
+      provenance: {
+        kind: "BRIEF_SPAN",
+        sourceText: visibleControl.sourceText,
+        start: visibleControl.start,
+        end: visibleControl.end,
+      },
+      priority: "REQUIRED",
+      prioritySource: "EXPLICIT",
+      confidence: 0.85,
+      class: "EXECUTABLE",
+      adapter: "PUBLIC_WEB",
+      intent: "CONTENT_PRESENT",
+    }),
+  ];
+}
+
 function buildContract(
   request: z.infer<typeof VerifyRequestSchema>,
   requirements: z.infer<typeof RequirementSchema>[],
@@ -130,24 +186,34 @@ export function compileBaselineRequirements(
   options: RequirementCompilerOptions,
 ): CompiledAcceptanceContract {
   const request = VerifyRequestSchema.parse(input);
-  const requirements = baselineRequirements
-    .slice(0, Math.min(request.maxRequirements, baselineRequirements.length))
-    .map((baseline) =>
-      RequirementSchema.parse({
-        id: baseline.id,
-        statement: baseline.statement,
-        provenance: {
-          kind: "DERIVED_BASELINE",
-          rationale: baseline.rationale,
-        },
-        priority: "OPTIONAL",
-        prioritySource: "DEFAULT",
-        confidence: 1,
-        class: "EXECUTABLE",
-        adapter: "PUBLIC_WEB",
-        intent: baseline.intent,
-      }),
-    );
+  const explicitRequirements = compileExplicitFallbackRequirements(
+    request.brief,
+  ).slice(0, request.maxRequirements);
+  const baselineLimit = Math.max(
+    0,
+    request.maxRequirements - explicitRequirements.length,
+  );
+  const requirements = [
+    ...explicitRequirements,
+    ...baselineRequirements
+      .slice(0, Math.min(baselineLimit, baselineRequirements.length))
+      .map((baseline) =>
+        RequirementSchema.parse({
+          id: baseline.id,
+          statement: baseline.statement,
+          provenance: {
+            kind: "DERIVED_BASELINE",
+            rationale: baseline.rationale,
+          },
+          priority: "OPTIONAL",
+          prioritySource: "DEFAULT",
+          confidence: 1,
+          class: "EXECUTABLE",
+          adapter: "PUBLIC_WEB",
+          intent: baseline.intent,
+        }),
+      ),
+  ];
 
   return buildContract(request, requirements, options);
 }
